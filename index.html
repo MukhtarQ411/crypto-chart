@@ -1405,8 +1405,8 @@ html, body {
     {
       category: 'COMMODITIES',
       items: [
-        { symbol: 'XAUUSD', source: 'twelvedata', yahooTicker: 'XAUUSD%3DX', displayName: 'Gold', fullName: 'Gold / US Dollar', icon: '🥇', decimals: 2, category: 'COMMODITIES' },
-        { symbol: 'XAGUSD', source: 'twelvedata', yahooTicker: 'XAGUSD%3DX', displayName: 'Silver', fullName: 'Silver / US Dollar', icon: '🥈', decimals: 3, category: 'COMMODITIES' },
+        { symbol: 'XAUUSD', source: 'yahoo', yahooTicker: 'XAUUSD%3DX', displayName: 'Gold', fullName: 'Gold / US Dollar', icon: '🥇', decimals: 2, category: 'COMMODITIES' },
+        { symbol: 'XAGUSD', source: 'yahoo', yahooTicker: 'XAGUSD%3DX', displayName: 'Silver', fullName: 'Silver / US Dollar', icon: '🥈', decimals: 3, category: 'COMMODITIES' },
       ]
     }
   ];
@@ -2052,6 +2052,10 @@ html, body {
     // Twelve Data prices (commodities with Yahoo fallback built-in)
     const tdResults = await fetchTwelveDataPricesForWatchlist();
     Object.assign(results, tdResults);
+
+    // Yahoo Finance prices (commodities, indices, etc.)
+    const yahooResults = await fetchYahooPricesForWatchlist();
+    Object.assign(results, yahooResults);
 
     return results;
   }
