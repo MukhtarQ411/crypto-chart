@@ -1405,8 +1405,8 @@ html, body {
     {
       category: 'COMMODITIES',
       items: [
-        { symbol: 'XAUUSD', source: 'yahoo', yahooTicker: 'XAUUSD%3DX', displayName: 'Gold', fullName: 'Gold / US Dollar', icon: '🥇', decimals: 2, category: 'COMMODITIES' },
-        { symbol: 'XAGUSD', source: 'yahoo', yahooTicker: 'XAGUSD%3DX', displayName: 'Silver', fullName: 'Silver / US Dollar', icon: '🥈', decimals: 3, category: 'COMMODITIES' },
+        { symbol: 'XAUUSD', source: 'twelvedata', yahooTicker: 'XAUUSD%3DX', displayName: 'Gold', fullName: 'Gold / US Dollar', icon: '🥇', decimals: 2, category: 'COMMODITIES' },
+        { symbol: 'XAGUSD', source: 'twelvedata', yahooTicker: 'XAGUSD%3DX', displayName: 'Silver', fullName: 'Silver / US Dollar', icon: '🥈', decimals: 3, category: 'COMMODITIES' },
       ]
     }
   ];
@@ -1603,6 +1603,18 @@ html, body {
     return meta ? meta.source : 'binance';
   }
 
+  function isTwelveData(symbol) {
+    const meta = SYMBOL_META[symbol];
+    return meta && meta.source === 'twelvedata';
+  }
+
+  function twelveDataSymbol(symbol) {
+    // Convert XAUUSD -> XAU/USD, XAGUSD -> XAG/USD
+    if (symbol === 'XAUUSD') return 'XAU/USD';
+    if (symbol === 'XAGUSD') return 'XAG/USD';
+    return symbol;
+  }
+
   // ================================================================
   // EXPONENTIAL BACKOFF RETRY
   // ================================================================
@@ -1778,10 +1790,149 @@ html, body {
   }
 
   // ================================================================
+  // API FUNCTIONS - TWELVE DATA (Primary source for commodities)
+  // ================================================================
+
+  const TWELVE_DATA_API_KEY = '3eb610b0c28341b09e0a2ac6d8bc10eb';
+  const TWELVE_BASE = 'https://api.twelvedata.com';
+  const TWELVE_INTERVAL_MAP = {
+    '1m': '1min', '5m': '5min', '15m': '15min', '30m': '30min',
+    '1h': '1h', '4h': '4h', '1d': '1day', '1w': '1week', '1M': '1month'
+  };
+
+  async function fetchTwelveDataKlines(symbol, interval, limit = KLINES_LIMIT) {
+    const tdSymbol = twelveDataSymbol(symbol);
+    const tdInterval = TWELVE_INTERVAL_MAP[interval] || '1h';
+    const url = `${TWELVE_BASE}/time_series?symbol=${tdSymbol}&interval=${tdInterval}&outputsize=${limit}&apikey=${TWELVE_DATA_API_KEY}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Twelve Data HTTP ${response.status}`);
+    }
+    const data = await response.json();
+
+    if (data.status === 'error' || !data.values || data.values.length === 0) {
+      throw new Error(data.message || 'Empty response from Twelve Data');
+    }
+
+    // Convert Twelve Data values to Binance-like kline array format
+    const klines = data.values.map(v => {
+      const time = new Date(v.datetime).getTime();
+      return [
+        time,
+        parseFloat(v.open),
+        parseFloat(v.high),
+        parseFloat(v.low),
+        parseFloat(v.close),
+        parseFloat(v.volume || 0),
+        time,
+        parseFloat(v.close) * parseFloat(v.volume || 0),
+        0,
+        0,
+        0,
+        0
+      ];
+    });
+
+    // Twelve Data returns newest first — reverse to chronological order
+    klines.reverse();
+
+    if (klines.length === 0) {
+      throw new Error('No valid data points from Twelve Data');
+    }
+
+    // Limit if needed
+    if (limit && klines.length > limit) {
+      return klines.slice(klines.length - limit);
+    }
+
+    return klines;
+  }
+
+  async function fetchTwelveDataQuote(symbol) {
+    const tdSymbol = twelveDataSymbol(symbol);
+    const url = `${TWELVE_BASE}/quote?symbol=${tdSymbol}&apikey=${TWELVE_DATA_API_KEY}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Twelve Data quote HTTP ${response.status}`);
+    }
+    const data = await response.json();
+
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Quote error from Twelve Data');
+    }
+
+    const price = parseFloat(data.close);
+    const prevClose = parseFloat(data.previous_close);
+    const changePercent = data.percent_change
+      ? parseFloat(data.percent_change)
+      : (prevClose ? ((price - prevClose) / prevClose) * 100 : 0);
+
+    return {
+      price: price,
+      change: changePercent,
+      high: parseFloat(data.high || 0),
+      low: parseFloat(data.low || 0),
+      volume: parseFloat(data.volume || 0),
+      quoteVolume: null,
+    };
+  }
+
+  async function fetchTwelveDataPricesForWatchlist() {
+    const results = {};
+    const tdSymbols = ALL_SYMBOLS.filter(s => isTwelveData(s));
+
+    const promises = tdSymbols.map(async (sym) => {
+      try {
+        const info = await fetchTwelveDataQuote(sym);
+        results[sym] = info;
+      } catch (err) {
+        console.warn(`Twelve Data watchlist failed for ${sym}, trying Yahoo fallback:`, err.message);
+        // Fallback to Yahoo Finance
+        try {
+          const meta = SYMBOL_META[sym];
+          const url = `${YAHOO_BASE}/${meta.yahooTicker}?range=1d&interval=5m`;
+          const response = await fetch(url);
+          if (response.ok) {
+            const yData = await response.json();
+            const yResult = yData.chart.result[0];
+            const yMeta = yResult.meta;
+            if (yMeta && yMeta.regularMarketPrice) {
+              const yPrice = yMeta.regularMarketPrice;
+              const yPrevClose = yMeta.chartPreviousClose || yMeta.previousClose;
+              const yChange = yPrevClose ? ((yPrice - yPrevClose) / yPrevClose) * 100 : 0;
+              results[sym] = { price: yPrice, change: yChange, high: null, low: null, volume: null, quoteVolume: null };
+            }
+          }
+        } catch (yahooErr) {
+          console.warn(`Yahoo fallback also failed for ${sym}:`, yahooErr.message);
+          if (state.watchlistPrices[sym]) {
+            results[sym] = state.watchlistPrices[sym];
+          }
+        }
+      }
+    });
+
+    await Promise.all(promises);
+    return results;
+  }
+
+  // ================================================================
   // MAIN DATA FETCHING (ROUTED)
   // ================================================================
 
   async function fetchSymbolKlines(symbol, interval, limit = KLINES_LIMIT) {
+    if (isTwelveData(symbol)) {
+      // Try Twelve Data first (primary for commodities), fallback to Yahoo
+      try {
+        return await fetchWithRetry(() => fetchTwelveDataKlines(symbol, interval, limit));
+      } catch (tdErr) {
+        console.warn(`Twelve Data klines failed for ${symbol}, falling back to Yahoo:`, tdErr.message);
+        const meta = SYMBOL_META[symbol];
+        return await fetchWithRetry(() => fetchYahooKlines(meta.yahooTicker, interval, limit));
+      }
+    }
     if (isYahoo(symbol)) {
       const meta = SYMBOL_META[symbol];
       return await fetchWithRetry(() => fetchYahooKlines(meta.yahooTicker, interval, limit));
@@ -1791,6 +1942,40 @@ html, body {
 
   async function fetchSymbol24hrInfo(symbol) {
     const meta = SYMBOL_META[symbol];
+
+    if (isTwelveData(symbol)) {
+      try {
+        return await fetchWithRetry(() => fetchTwelveDataQuote(symbol));
+      } catch (tdErr) {
+        console.warn(`Twelve Data quote failed for ${symbol}, falling back to Yahoo:`, tdErr.message);
+        try {
+          const url = `${YAHOO_BASE}/${meta.yahooTicker}?range=2d&interval=1m`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const result = data.chart.result[0];
+          const m = result.meta;
+          const price = m.regularMarketPrice;
+          const prevClose = m.chartPreviousClose || m.previousClose;
+          const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+          const quote = result.indicators && result.indicators.quote ? result.indicators.quote[0] : null;
+          let high = null, low = null, volume = null;
+          if (quote) {
+            const validHighs = (quote.high || []).filter(h => h !== null);
+            const validLows = (quote.low || []).filter(l => l !== null);
+            if (validHighs.length) high = Math.max(...validHighs);
+            if (validLows.length) low = Math.min(...validLows);
+            const validVols = (quote.volume || []).filter(v => v !== null && v > 0);
+            if (validVols.length) volume = validVols.reduce((a, b) => a + b, 0);
+          }
+          return { price, change, high, low, volume, quoteVolume: null };
+        } catch (yahooErr) {
+          console.warn(`Yahoo fallback also failed for ${symbol}:`, yahooErr.message);
+          return null;
+        }
+      }
+    }
+
     if (isYahoo(symbol)) {
       try {
         const url = `${YAHOO_BASE}/${meta.yahooTicker}?range=2d&interval=1m`;
@@ -1864,9 +2049,9 @@ html, body {
     });
     await Promise.all(cryptoPromises);
 
-    // Yahoo prices
-    const yahooResults = await fetchYahooPricesForWatchlist();
-    Object.assign(results, yahooResults);
+    // Twelve Data prices (commodities with Yahoo fallback built-in)
+    const tdResults = await fetchTwelveDataPricesForWatchlist();
+    Object.assign(results, tdResults);
 
     return results;
   }
@@ -2588,12 +2773,16 @@ html, body {
 
     // Update exchange/source display
     const source = getSource(symbol);
-    const sourceName = source === 'yahoo' ? 'Yahoo Finance' : 'Binance';
+    let sourceName = 'Binance';
+    if (source === 'twelvedata') sourceName = 'Twelve Data';
+    else if (source === 'yahoo') sourceName = 'Yahoo Finance';
     dom.infoExchange.textContent = sourceName;
     dom.infoDataSource.textContent = sourceName;
 
     // Data source badge in status bar
-    if (source === 'yahoo') {
+    if (source === 'twelvedata') {
+      dom.dataSourceDisplay.innerHTML = `<span class="data-source-badge gold">Twelve Data</span>`;
+    } else if (source === 'yahoo') {
       dom.dataSourceDisplay.innerHTML = `<span class="data-source-badge yahoo">Yahoo Finance</span>`;
     } else {
       dom.dataSourceDisplay.innerHTML = `<span class="data-source-badge binance">Binance</span>`;
