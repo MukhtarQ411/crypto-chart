@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoChart Pro — TradingView-Style Dashboard</title>
+
+<!-- Google Fonts: Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Lightweight Charts (TradingView) -->
+<script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* TradingView color palette */
+  --tv-bg-main: #131722;
+  --tv-bg-card: #1e222d;
+  --tv-bg-hover: #2a2e39;
+  --tv-bg-raised: #242732;
+  --tv-accent: #2962FF;
+  --tv-accent-hover: #1e52d4;
+  --tv-green: #089981;
+  --tv-red: #f23645;
+  --tv-text-primary: #d1d4dc;
+  --tv-text-secondary: #787b86;
+  --tv-text-muted: #5d606b;
+  --tv-border: #2a2e39;
+  --tv-border-light: #363a45;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+
+  /* Typography */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --topbar-height: 48px;
+  --timeframe-height: 42px;
+  --statusbar-height: 28px;
+  --rightpanel-width: 220px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--tv-bg-main);
+  color: var(--tv-text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== APP SHELL ===== */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ===== TOP BAR ===== */
+.top-bar {
+  height: var(--topbar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  background: var(--tv-bg-card);
+  border-bottom: 1px solid var(--tv-border);
+  gap: var(--space-lg);
+  z-index: 10;
+}
+
+.top-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--tv-text-primary);
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+.top-bar__brand-icon {
+  width: 22px;
+  height: 22px;
+  background: var(--tv-accent);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  font-weight: 700;
+}
+
+.top-bar__symbol-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.top-bar__symbol-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.top-bar__symbol-price {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  font-family: var(--font-mono);
+}
+
+.top-bar__change {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.top-bar__change.positive {
+  color: var(--tv-green);
+  background: rgba(8, 153, 129, 0.12);
+}
+
+.top-bar__change.negative {
+  color: var(--tv-red);
+  background: rgba(242, 54, 69, 0.12);
+}
+
+.top-bar__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.top-bar__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.top-bar__stat-label {
+  font-size: 10px;
+  color: var(--tv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.top-bar__stat-value {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+.top-bar__tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.top-bar__tab {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tv-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.top-bar__tab:hover {
+  color: var(--tv-text-primary);
+  background: var(--tv-bg-hover);
+}
+
+.top-bar__tab.active {
+  color: var(--tv-accent);
+  background: rgba(41, 98, 255, 0.1);
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+}
+
+/* ===== LEFT SIDEBAR (WATCHLIST) ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--tv-bg-card);
+  border-right: 1px solid var(--tv-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar__header {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--tv-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sidebar__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.sidebar__search {
+  padding: var(--space-sm) var(--space-lg);
+  flex-shrink: 0;
+}
+
+.sidebar__search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--tv-bg-main);
+  border: 1px solid var(--tv-border);
+  border-radius: 4px;
+  color: var(--tv-text-primary);
+  font-size: 12px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sidebar__search-input:focus {
+  border-color: var(--tv-accent);
+}
+
+.sidebar__search-input::placeholder {
+  color: var(--tv-text-muted);
+}
+
+.watchlist {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+
+/* Scrollbar styling */
+.watchlist::-webkit-scrollbar {
+  width: 4px;
+}
+.watchlist::-webkit-scrollbar-track {
+  background: transparent;
+}
+.watchlist::-webkit-scrollbar-thumb {
+  background: var(--tv-bg-hover);
+  border-radius: 2px;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px var(--space-lg);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+
+.watchlist-item:hover {
+  background: var(--tv-bg-hover);
+}
+
+.watchlist-item.active {
+  background: rgba(41, 98, 255, 0.08);
+  border-left-color: var(--tv-accent);
+}
+
+.watchlist-item__left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.watchlist-item__symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tv-text-primary);
+}
+
+.watchlist-item__volume {
+  font-size: 10px;
+  color: var(--tv-text-secondary);
+}
+
+.watchlist-item__right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.watchlist-item__price {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+.watchlist-item__change {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.watchlist-item__change.positive {
+  color: var(--tv-green);
+  background: rgba(8, 153, 129, 0.1);
+}
+
+.watchlist-item__change.negative {
+  color: var(--tv-red);
+  background: rgba(242, 54, 69, 0.1);
+}
+
+.watchlist-item__change.neutral {
+  color: var(--tv-text-secondary);
+}
+
+/* ===== CHART SECTION ===== */
+.chart-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--tv-bg-main);
+}
+
+/* ===== TIMEFRAME BAR ===== */
+.timeframe-bar {
+  height: var(--timeframe-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  gap: 2px;
+  border-bottom: 1px solid var(--tv-border);
+  background: var(--tv-bg-card);
+}
+
+.timeframe-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tv-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+  position: relative;
+}
+
+.timeframe-btn:hover {
+  color: var(--tv-text-primary);
+  background: var(--tv-bg-hover);
+}
+
+.timeframe-btn.active {
+  color: var(--tv-text-primary);
+  background: var(--tv-accent);
+}
+
+.timeframe-btn.active:hover {
+  background: var(--tv-accent-hover);
+}
+
+.timeframe-separator {
+  width: 1px;
+  height: 16px;
+  background: var(--tv-border);
+  margin: 0 4px;
+}
+
+/* ===== CHART AREA ===== */
+.chart-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.chart-area > .chart-loading,
+.chart-area > .error-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.chart-pane {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+#mainChartContainer {
+  flex: 7;
+}
+
+#rsiChartContainer {
+  flex: 3;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-pane-divider {
+  height: 4px;
+  background: var(--tv-bg-card);
+  cursor: row-resize;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.chart-pane-divider:hover {
+  background: var(--tv-bg-hover);
+}
+
+.chart-pane-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 2px;
+  background: var(--tv-text-muted);
+  border-radius: 1px;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tv-bg-main);
+  z-index: 5;
+  transition: opacity 0.3s ease;
+}
+
+.chart-loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chart-loading__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--tv-border);
+  border-top-color: var(--tv-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.chart-loading__text {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--tv-text-secondary);
+}
+
+/* Chart legend overlay */
+.chart-legend {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  gap: var(--space-md);
+  pointer-events: none;
+}
+
+.chart-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tv-text-secondary);
+}
+
+.chart-legend__line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* ===== RIGHT PANEL ===== */
+.right-panel {
+  width: var(--rightpanel-width);
+  flex-shrink: 0;
+  background: var(--tv-bg-card);
+  border-left: 1px solid var(--tv-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.right-panel__section {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--tv-border);
+}
+
+.right-panel__section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--tv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: var(--space-sm);
+}
+
+.price-info__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.price-info__label {
+  color: var(--tv-text-secondary);
+}
+
+.price-info__value {
+  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.price-info__value.positive {
+  color: var(--tv-green);
+}
+
+.price-info__value.negative {
+  color: var(--tv-red);
+}
+
+.right-panel-toggle {
+  display: none;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 28px;
+  background: var(--tv-bg-card);
+  border: 1px solid var(--tv-border);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  color: var(--tv-text-secondary);
+  font-size: 10px;
+  z-index: 5;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== STATUS BAR ===== */
+.status-bar {
+  height: var(--statusbar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  background: var(--tv-bg-card);
+  border-top: 1px solid var(--tv-border);
+  gap: var(--space-lg);
+  font-size: 11px;
+  color: var(--tv-text-secondary);
+}
+
+.status-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-bar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tv-green);
+}
+
+.status-bar__dot.disconnected {
+  background: var(--tv-red);
+}
+
+.status-bar__dot.connecting {
+  background: #f0a500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-bar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.status-bar__separator {
+  width: 1px;
+  height: 12px;
+  background: var(--tv-border);
+}
+
+/* ===== ERROR OVERLAY ===== */
+.error-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(19, 23, 34, 0.85);
+  z-index: 20;
+  gap: var(--space-md);
+  padding: var(--space-2xl);
+  text-align: center;
+  transition: opacity 0.3s ease;
+}
+
+.error-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.error-overlay__icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.error-overlay__text {
+  font-size: 13px;
+  color: var(--tv-text-secondary);
+  max-width: 360px;
+}
+
+.error-overlay__retry {
+  margin-top: 4px;
+  padding: 6px 16px;
+  background: var(--tv-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s ease;
+}
+
+.error-overlay__retry:hover {
+  background: var(--tv-accent-hover);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .right-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+  .top-bar__stats {
+    display: none;
+  }
+  .top-bar__tabs {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--topbar-height);
+    bottom: var(--statusbar-height);
+    z-index: 50;
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--tv-border);
+  border-radius: 4px;
+  color: var(--tv-text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--tv-bg-hover);
+  color: var(--tv-text-primary);
+}
+
+/* ===== MOBILE OVERLAY ===== */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 49;
+}
+
+.sidebar-overlay.show {
+  display: block;
+}
+
+/* ===== Volume Profile Legend ===== */
+.indicator-label {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--tv-bg-main);
+  border: 1px solid var(--tv-border-light);
+  pointer-events: auto;
+  cursor: default;
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="top-bar">
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle watchlist">☰</button>
+
+    <div class="top-bar__brand">
+      <div class="top-bar__brand-icon">C</div>
+      <span>CryptoChart</span>
+    </div>
+
+    <div class="top-bar__symbol-info" id="symbolInfo">
+      <span class="top-bar__symbol-name" id="symbolName">BTCUSDT</span>
+      <span class="top-bar__symbol-price" id="currentPrice">—</span>
+      <span class="top-bar__change" id="priceChange">—</span>
+    </div>
+
+    <div class="top-bar__stats" id="topStats">
+      <div class="top-bar__stat">
+        <span class="top-bar__stat-label">High</span>
+        <span class="top-bar__stat-value" id="statHigh">—</span>
+      </div>
+      <div class="top-bar__stat">
+        <span class="top-bar__stat-label">Low</span>
+        <span class="top-bar__stat-value" id="statLow">—</span>
+      </div>
+      <div class="top-bar__stat">
+        <span class="top-bar__stat-label">Volume</span>
+        <span class="top-bar__stat-value" id="statVolume">—</span>
+      </div>
+      <div class="top-bar__stat">
+        <span class="top-bar__stat-label">Trades</span>
+        <span class="top-bar__stat-value" id="statTrades">—</span>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:12px;"></div>
+
+    <div class="top-bar__tabs">
+      <button class="top-bar__tab active">Chart</button>
+      <button class="top-bar__tab">Overview</button>
+      <button class="top-bar__tab">Depth</button>
+      <button class="top-bar__tab">Info</button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__header">
+        <span class="sidebar__title">Watchlist</span>
+        <span style="font-size:10px; color:var(--tv-text-muted);" id="watchlistCount">8</span>
+      </div>
+      <div class="sidebar__search">
+        <input class="sidebar__search-input" type="text" placeholder="Filter symbols..." id="watchlistSearch">
+      </div>
+      <div class="watchlist" id="watchlist"></div>
+    </aside>
+
+    <!-- ===== CHART SECTION ===== -->
+    <section class="chart-section">
+
+      <!-- TIMEFRAME BAR -->
+      <div class="timeframe-bar" id="timeframeBar">
+        <button class="timeframe-btn" data-interval="1m">1m</button>
+        <button class="timeframe-btn" data-interval="5m">5m</button>
+        <button class="timeframe-btn" data-interval="15m">15m</button>
+        <button class="timeframe-btn" data-interval="30m">30m</button>
+        <div class="timeframe-separator"></div>
+        <button class="timeframe-btn active" data-interval="1h">1H</button>
+        <button class="timeframe-btn" data-interval="4h">4H</button>
+        <div class="timeframe-separator"></div>
+        <button class="timeframe-btn" data-interval="1d">1D</button>
+        <button class="timeframe-btn" data-interval="1w">1W</button>
+        <button class="timeframe-btn" data-interval="1M">1M</button>
+        <div style="flex:1"></div>
+        <!-- Chart legend indicators shown here -->
+        <div class="chart-legend" id="chartLegend">
+          <div class="chart-legend__item">
+            <span class="chart-legend__line" style="background:#2962FF;"></span>
+            <span>SMA 20</span>
+          </div>
+          <div class="chart-legend__item">
+            <span class="chart-legend__line" style="background:#F0A500;"></span>
+            <span>SMA 50</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHART AREA -->
+      <div class="chart-area">
+        <!-- Loading overlay -->
+        <div class="chart-loading" id="chartLoading">
+          <div style="text-align:center;">
+            <div class="chart-loading__spinner"></div>
+            <div class="chart-loading__text">Loading chart data...</div>
+          </div>
+        </div>
+
+        <!-- Error overlay -->
+        <div class="error-overlay hidden" id="errorOverlay">
+          <div class="error-overlay__icon">⚠️</div>
+          <div class="error-overlay__text" id="errorText">Failed to load data. Please try again.</div>
+          <button class="error-overlay__retry" id="retryBtn">Retry</button>
+        </div>
+
+        <!-- Main Chart -->
+        <div class="chart-pane" id="mainChartContainer"></div>
+
+        <!-- Pane Divider -->
+        <div class="chart-pane-divider"></div>
+
+        <!-- RSI Chart -->
+        <div class="chart-pane" id="rsiChartContainer"></div>
+      </div>
+    </section>
+
+    <!-- ===== RIGHT PANEL ===== -->
+    <aside class="right-panel" id="rightPanel">
+      <div class="right-panel__section">
+        <div class="right-panel__section-title">Price Statistics</div>
+        <div class="price-info__row">
+          <span class="price-info__label">24h Change</span>
+          <span class="price-info__value" id="infoChange">—</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">24h High</span>
+          <span class="price-info__value" id="infoHigh">—</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">24h Low</span>
+          <span class="price-info__value" id="infoLow">—</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">24h Volume</span>
+          <span class="price-info__value" id="infoVolume">—</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">24h Turnover</span>
+          <span class="price-info__value" id="infoTurnover">—</span>
+        </div>
+      </div>
+
+      <div class="right-panel__section">
+        <div class="right-panel__section-title">Market Stats</div>
+        <div class="price-info__row">
+          <span class="price-info__label">Symbol</span>
+          <span class="price-info__value" id="infoSymbol">BTCUSDT</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">Exchange</span>
+          <span class="price-info__value">Binance</span>
+        </div>
+        <div class="price-info__row">
+          <span class="price-info__label">Type</span>
+          <span class="price-info__value">Spot</span>
+        </div>
+      </div>
+
+      <div class="right-panel__section" style="flex:1; border-bottom:none;">
+        <div class="right-panel__section-title">Indicators</div>
+        <div style="font-size:12px; color:var(--tv-text-secondary); line-height:1.8;">
+          <div>SMA 20 <span id="sma20Value" style="color:var(--tv-text-primary);font-family:var(--font-mono);float:right;">—</span></div>
+          <div>SMA 50 <span id="sma50Value" style="color:var(--tv-text-primary);font-family:var(--font-mono);float:right;">—</span></div>
+          <div>RSI (14) <span id="rsiValue" style="font-family:var(--font-mono);float:right;">—</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <footer class="status-bar">
+    <div class="status-bar__item">
+      <div class="status-bar__dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <div class="status-bar__item">
+      <span id="lastUpdateTime">—</span>
+    </div>
+    <div class="status-bar__right">
+      <span class="status-bar__item" id="currentSymbolStatus">BTCUSDT · 1H</span>
+      <span class="status-bar__separator"></span>
+      <span class="status-bar__item">Data: Binance</span>
+      <span class="status-bar__separator"></span>
+      <span class="status-bar__item" id="candleCount">—</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ================================================================
+  // CONFIGURATION
+  // ================================================================
+
+  const SYMBOLS = [
+    'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT',
+    'XRPUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'
+  ];
+
+  const INTERVALS = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'];
+  const DEFAULT_SYMBOL = 'BTCUSDT';
+  const DEFAULT_INTERVAL = '1h';
+  const KLINES_LIMIT = 500;
+  const REFRESH_INTERVAL_MS = 30000;  // 30s for current chart
+  const WATCHLIST_REFRESH_MS = 30000;  // 30s for watchlist prices
+
+  // ================================================================
+  // DOM REFERENCES
+  // ================================================================
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  const dom = {
+    watchlist:         $('#watchlist'),
+    watchlistSearch:   $('#watchlistSearch'),
+    watchlistCount:    $('#watchlistCount'),
+    sidebar:           $('#sidebar'),
+    sidebarOverlay:    $('#sidebarOverlay'),
+    mobileMenuBtn:     $('#mobileMenuBtn'),
+    mainChartContainer: $('#mainChartContainer'),
+    rsiChartContainer:  $('#rsiChartContainer'),
+    symbolName:        $('#symbolName'),
+    currentPrice:      $('#currentPrice'),
+    priceChange:       $('#priceChange'),
+    statHigh:          $('#statHigh'),
+    statLow:           $('#statLow'),
+    statVolume:        $('#statVolume'),
+    statTrades:        $('#statTrades'),
+    infoChange:        $('#infoChange'),
+    infoHigh:          $('#infoHigh'),
+    infoLow:           $('#infoLow'),
+    infoVolume:        $('#infoVolume'),
+    infoTurnover:      $('#infoTurnover'),
+    infoSymbol:        $('#infoSymbol'),
+    sma20Value:        $('#sma20Value'),
+    sma50Value:        $('#sma50Value'),
+    rsiValue:          $('#rsiValue'),
+    statusDot:         $('#statusDot'),
+    statusText:        $('#statusText'),
+    lastUpdateTime:    $('#lastUpdateTime'),
+    currentSymbolStatus: $('#currentSymbolStatus'),
+    candleCount:       $('#candleCount'),
+    chartLoading:      $('#chartLoading'),
+    errorOverlay:      $('#errorOverlay'),
+    errorText:         $('#errorText'),
+    retryBtn:          $('#retryBtn'),
+    timeframeBar:      $('#timeframeBar'),
+  };
+
+  // ================================================================
+  // STATE
+  // ================================================================
+
+  const state = {
+    currentSymbol: DEFAULT_SYMBOL,
+    currentInterval: DEFAULT_INTERVAL,
+    chartData: [],           // raw ohlcv parsed
+    mainChart: null,
+    rsiChart: null,
+    candleSeries: null,
+    volumeSeries: null,
+    sma20Series: null,
+    sma50Series: null,
+    rsiSeries: null,
+    watchlistPrices: {},     // { symbol: { price, change, volume } }
+    watchlistData: {},       // { symbol: { ...24hr ticker } }
+    isRefreshing: false,
+    lastKlines: [],          // cached raw klines for current symbol/interval
+  };
+
+  // ================================================================
+  // UTILITY FUNCTIONS
+  // ================================================================
+
+  /** Format price with appropriate decimals */
+  function formatPrice(price) {
+    if (price === undefined || price === null || isNaN(price)) return '—';
+    const p = Math.abs(price);
+    let decimals = 2;
+    if (p < 0.0001) decimals = 8;
+    else if (p < 0.01) decimals = 6;
+    else if (p < 1) decimals = 4;
+    else if (p < 100) decimals = 3;
+    else decimals = 2;
+    return price.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  /** Format large numbers with K/M/B suffix */
+  function formatVolume(val) {
+    if (val === undefined || val === null || isNaN(val)) return '—';
+    if (val >= 1e9) return (val / 1e9).toFixed(2) + 'B';
+    if (val >= 1e6) return (val / 1e6).toFixed(2) + 'M';
+    if (val >= 1e3) return (val / 1e3).toFixed(1) + 'K';
+    return val.toFixed(1);
+  }
+
+  /** Format number with commas */
+  function formatNumber(num) {
+    if (num === undefined || num === null || isNaN(num)) return '—';
+    return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  /** Truncate symbol for display */
+  function shortSymbol(sym) {
+    return sym.replace('USDT', '');
+  }
+
+  /** Get change class based on value */
+  function changeClass(value) {
+    if (value === undefined || value === null || value === 0) return 'neutral';
+    return value > 0 ? 'positive' : 'negative';
+  }
+
+  /** Format change percentage */
+  function formatChange(val) {
+    if (val === undefined || val === null || isNaN(val)) return '—';
+    const sign = val >= 0 ? '+' : '';
+    return sign + val.toFixed(2) + '%';
+  }
+
+  /** Map display interval to Binance interval */
+  function mapInterval(interval) {
+    return interval;
+  }
+
+  /** Get appropriate decimal places for a symbol */
+  function getDecimals(symbol) {
+    if (symbol.startsWith('BTC') || symbol.startsWith('ETH')) return 2;
+    if (symbol.startsWith('SOL') || symbol.startsWith('ADA') || symbol.startsWith('XRP') || symbol.startsWith('DOT') || symbol.startsWith('AVAX')) return 3;
+    if (symbol.startsWith('DOGE')) return 4;
+    return 2;
+  }
+
+  /** Format a timestamp to locale time string */
+  function formatTime(ts) {
+    return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // ================================================================
+  // API FUNCTIONS
+  // ================================================================
+
+  const BINANCE_API = 'https://api.binance.com/api/v3';
+
+  /** Fetch klines (candlestick) data from Binance */
+  async function fetchKlines(symbol, interval, limit = KLINES_LIMIT) {
+    const url = `${BINANCE_API}/klines?symbol=${symbol}&interval=${mapInterval(interval)}&limit=${limit}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('Empty response from Binance API');
+    }
+    return data;
+  }
+
+  /** Fetch 24hr ticker for a single symbol */
+  async function fetch24hrTicker(symbol) {
+    const url = `${BINANCE_API}/ticker/24hr?symbol=${symbol}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ticker for ${symbol}`);
+    return await response.json();
+  }
+
+  /** Fetch 24hr prices for all watchlist symbols in parallel */
+  async function fetchAllWatchlistPrices() {
+    const results = {};
+    const promises = SYMBOLS.map(async (sym) => {
+      try {
+        const data = await fetch24hrTicker(sym);
+        results[sym] = {
+          price: parseFloat(data.lastPrice),
+          change: parseFloat(data.priceChangePercent),
+          high: parseFloat(data.highPrice),
+          low: parseFloat(data.lowPrice),
+          volume: parseFloat(data.volume),
+          quoteVolume: parseFloat(data.quoteVolume),
+        };
+      } catch (err) {
+        console.warn(`Failed to fetch ${sym}:`, err.message);
+        // Keep old data if available
+        if (state.watchlistPrices[sym]) {
+          results[sym] = state.watchlistPrices[sym];
+        }
+      }
+    });
+    await Promise.all(promises);
+    return results;
+  }
+
+  // ================================================================
+  // INDICATOR CALCULATIONS
+  // ================================================================
+
+  /** Calculate Simple Moving Average */
+  function calculateSMA(data, period) {
+    const result = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        result.push({ time: data[i].time, value: null });
+        continue;
+      }
+      let sum = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        sum += data[j].close;
+      }
+      result.push({ time: data[i].time, value: sum / period });
+    }
+    return result;
+  }
+
+  /** Calculate RSI using Wilder's smoothing */
+  function calculateRSI(data, period = 14) {
+    if (data.length < period + 1) {
+      return data.map(d => ({ time: d.time, value: null }));
+    }
+
+    const closes = data.map(d => d.close);
+    const changes = [];
+    for (let i = 1; i < closes.length; i++) {
+      changes.push(closes[i] - closes[i - 1]);
+    }
+
+    // First average gain / loss (simple average)
+    let avgGain = 0, avgLoss = 0;
+    for (let i = 0; i < period; i++) {
+      if (changes[i] >= 0) avgGain += changes[i];
+      else avgLoss += Math.abs(changes[i]);
+    }
+    avgGain /= period;
+    avgLoss /= period;
+
+    const rsiValues = [];
+    // Fill initial nulls
+    for (let i = 0; i < period; i++) {
+      rsiValues.push({ time: data[i + 1].time, value: null });
+    }
+
+    // First RSI value
+    const firstRS = avgGain / (avgLoss === 0 ? 0.00001 : avgLoss);
+    const firstRsi = 100 - (100 / (1 + firstRS));
+    rsiValues.push({ time: data[period].time, value: firstRsi });
+
+    // Remaining values with Wilder's smoothing
+    for (let i = period; i < changes.length; i++) {
+      const gain = changes[i] >= 0 ? changes[i] : 0;
+      const loss = changes[i] < 0 ? Math.abs(changes[i]) : 0;
+
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+      const RS = avgGain / (avgLoss === 0 ? 0.00001 : avgLoss);
+      const rsi = 100 - (100 / (1 + RS));
+      rsiValues.push({ time: data[i + 1].time, value: rsi });
+    }
+
+    return rsiValues;
+  }
+
+  // ================================================================
+  // CHART INITIALIZATION
+  // ================================================================
+
+  const chartOptions = {
+    layout: {
+      background: { type: 'solid', color: '#131722' },
+      textColor: '#787b86',
+      fontSize: 11,
+      fontFamily: 'Inter, -apple-system, sans-serif',
+    },
+    grid: {
+      vertLines: { color: '#1e222d' },
+      horzLines: { color: '#1e222d' },
+    },
+    crosshair: {
+      color: '#758696',
+      style: 0,
+      vertLine: {
+        color: '#758696',
+        width: 1,
+        style: 2,
+        labelBackgroundColor: '#2a2e39',
+      },
+      horzLine: {
+        color: '#758696',
+        width: 1,
+        style: 2,
+        labelBackgroundColor: '#2a2e39',
+      },
+    },
+    rightPriceScale: {
+      borderColor: '#2a2e39',
+      scaleMargins: { top: 0.05, bottom: 0.25 },
+    },
+    timeScale: {
+      borderColor: '#2a2e39',
+      timeVisible: true,
+      secondsVisible: false,
+      rightOffset: 8,
+      barSpacing: 6,
+      fixLeftEdge: true,
+      lockVisibleTimeRangeOnResize: true,
+    },
+    handleScroll: { vertTouchDrag: false },
+    handleScale: { axisPressedMouseMove: true },
+  };
+
+  const rsiChartOptions = {
+    layout: {
+      background: { type: 'solid', color: '#131722' },
+      textColor: '#787b86',
+      fontSize: 11,
+      fontFamily: 'Inter, -apple-system, sans-serif',
+    },
+    grid: {
+      vertLines: { color: '#1e222d' },
+      horzLines: { color: '#1e222d' },
+    },
+    crosshair: {
+      color: '#758696',
+      style: 0,
+      vertLine: {
+        color: '#758696',
+        width: 1,
+        style: 2,
+        labelBackgroundColor: '#2a2e39',
+      },
+      horzLine: {
+        color: '#758696',
+        width: 1,
+        style: 2,
+        labelBackgroundColor: '#2a2e39',
+      },
+    },
+    rightPriceScale: {
+      borderColor: '#2a2e39',
+      scaleMargins: { top: 0.08, bottom: 0.08 },
+    },
+    timeScale: {
+      borderColor: '#2a2e39',
+      timeVisible: true,
+      secondsVisible: false,
+      visible: true,
+    },
+    handleScroll: { vertTouchDrag: false },
+    handleScale: { axisPressedMouseMove: true },
+  };
+
+  function initCharts() {
+    // Destroy existing charts
+    if (state.mainChart) {
+      state.mainChart.remove();
+      state.mainChart = null;
+    }
+    if (state.rsiChart) {
+      state.rsiChart.remove();
+      state.rsiChart = null;
+    }
+
+    const mainContainer = dom.mainChartContainer;
+    const rsiContainer = dom.rsiChartContainer;
+
+    // Create main chart
+    state.mainChart = LightweightCharts.createChart(mainContainer, chartOptions);
+
+    // Candlestick series
+    state.candleSeries = state.mainChart.addCandlestickSeries({
+      upColor: '#089981',
+      downColor: '#f23645',
+      borderUpColor: '#089981',
+      borderDownColor: '#f23645',
+      wickUpColor: '#089981',
+      wickDownColor: '#f23645',
+    });
+
+    // Volume histogram series (separate price scale, bottom 25%)
+    state.volumeSeries = state.mainChart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'volume',
+    });
+
+    // Configure volume price scale (bottom 20%)
+    state.mainChart.priceScale('volume').applyOptions({
+      scaleMargins: { top: 0.80, bottom: 0 },
+    });
+
+    // SMA 20 line (blue)
+    state.sma20Series = state.mainChart.addLineSeries({
+      color: '#2962FF',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 3,
+    });
+
+    // SMA 50 line (amber)
+    state.sma50Series = state.mainChart.addLineSeries({
+      color: '#F0A500',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 3,
+    });
+
+    // Create RSI chart
+    state.rsiChart = LightweightCharts.createChart(rsiContainer, rsiChartOptions);
+
+    // RSI line
+    state.rsiSeries = state.rsiChart.addLineSeries({
+      color: '#a065ff',
+      lineWidth: 1.5,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 3,
+    });
+
+    // Add overbought/oversold lines on RSI using separate line series
+    state.rsiOverbought = state.rsiChart.addLineSeries({
+      color: '#f23645',
+      lineWidth: 1,
+      lineStyle: 2, // Dashed
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    state.rsiOversold = state.rsiChart.addLineSeries({
+      color: '#089981',
+      lineWidth: 1,
+      lineStyle: 2, // Dashed
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    state.rsiMiddle = state.rsiChart.addLineSeries({
+      color: '#787b86',
+      lineWidth: 1,
+      lineStyle: 2, // Dashed
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    // Sync time scales between charts (with guard to prevent circular updates)
+    let syncingTimeScale = false;
+    state.mainChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
+      if (syncingTimeScale || !range || !state.rsiChart) return;
+      syncingTimeScale = true;
+      state.rsiChart.timeScale().setVisibleRange(range);
+      syncingTimeScale = false;
+    });
+
+    state.rsiChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
+      if (syncingTimeScale || !range || !state.mainChart) return;
+      syncingTimeScale = true;
+      state.mainChart.timeScale().setVisibleRange(range);
+      syncingTimeScale = false;
+    });
+
+    // Handle resize after a tick to ensure layout is settled
+    requestAnimationFrame(() => {
+      handleResize();
+    });
+  }
+
+  function handleResize() {
+    const mainContainer = dom.mainChartContainer;
+    const rsiContainer = dom.rsiChartContainer;
+
+    if (state.mainChart && mainContainer.clientWidth > 0) {
+      state.mainChart.resize(
+        mainContainer.clientWidth,
+        mainContainer.clientHeight
+      );
+    }
+    if (state.rsiChart && rsiContainer.clientWidth > 0) {
+      state.rsiChart.resize(
+        rsiContainer.clientWidth,
+        rsiContainer.clientHeight
+      );
+    }
+  }
+
+  // ================================================================
+  // CHART UPDATE
+  // ================================================================
+
+  function updateCharts(klines, symbol) {
+    if (!klines || klines.length === 0) return;
+
+    // Parse klines
+    const chartData = klines.map(k => ({
+      time: Math.floor(k[0] / 1000), // ms to seconds
+      open: parseFloat(k[1]),
+      high: parseFloat(k[2]),
+      low: parseFloat(k[3]),
+      close: parseFloat(k[4]),
+      volume: parseFloat(k[5]),
+      quoteVolume: parseFloat(k[7]),
+      trades: parseInt(k[8], 10),
+    }));
+
+    state.chartData = chartData;
+
+    // Update candle series
+    const candleData = chartData.map(d => ({
+      time: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+    state.candleSeries.setData(candleData);
+
+    // Update volume series (bottom histogram)
+    const volumeData = chartData.map(d => ({
+      time: d.time,
+      value: d.volume,
+      color: d.close >= d.open
+        ? 'rgba(8, 153, 129, 0.4)'
+        : 'rgba(242, 54, 69, 0.4)',
+    }));
+    state.volumeSeries.setData(volumeData);
+
+    // Calculate and update SMA 20
+    const sma20Data = calculateSMA(chartData, 20);
+    const validSma20 = sma20Data.filter(d => d.value !== null);
+    if (validSma20.length > 0) {
+      state.sma20Series.setData(validSma20);
+      dom.sma20Value.textContent = formatPrice(validSma20[validSma20.length - 1].value);
+    }
+
+    // Calculate and update SMA 50
+    const sma50Data = calculateSMA(chartData, 50);
+    const validSma50 = sma50Data.filter(d => d.value !== null);
+    if (validSma50.length > 0) {
+      state.sma50Series.setData(validSma50);
+      dom.sma50Value.textContent = formatPrice(validSma50[validSma50.length - 1].value);
+    }
+
+    // Calculate and update RSI
+    const rsiData = calculateRSI(chartData, 14);
+    const validRsi = rsiData.filter(d => d.value !== null);
+
+    if (validRsi.length > 0) {
+      state.rsiSeries.setData(validRsi);
+
+      // Overbought line at 70
+      const obData = validRsi.map(d => ({ time: d.time, value: 70 }));
+      state.rsiOverbought.setData(obData);
+
+      // Oversold line at 30
+      const osData = validRsi.map(d => ({ time: d.time, value: 30 }));
+      state.rsiOversold.setData(osData);
+
+      // Middle line at 50
+      const midData = validRsi.map(d => ({ time: d.time, value: 50 }));
+      state.rsiMiddle.setData(midData);
+
+      // Update RSI value in right panel
+      const lastRsi = validRsi[validRsi.length - 1].value;
+      const rsiEl = dom.rsiValue;
+      rsiEl.textContent = lastRsi.toFixed(2);
+      rsiEl.style.color = lastRsi > 70 ? '#f23645' : lastRsi < 30 ? '#089981' : '#d1d4dc';
+    }
+
+    // Fit content
+    state.mainChart.timeScale().fitContent();
+    state.rsiChart.timeScale().fitContent();
+
+    // Update top bar stats
+    const last = chartData[chartData.length - 1];
+    dom.currentPrice.textContent = formatPrice(last.close);
+    dom.statHigh.textContent = formatPrice(last.high);
+    dom.statLow.textContent = formatPrice(last.low);
+    dom.statVolume.textContent = formatVolume(last.volume);
+    dom.statTrades.textContent = formatNumber(last.trades);
+
+    // Update candle count
+    dom.candleCount.textContent = chartData.length + ' candles';
+
+    // Update status
+    setStatus('connected', 'Connected');
+    dom.lastUpdateTime.textContent = 'Last update: ' + formatTime(Date.now());
+    dom.currentSymbolStatus.textContent = `${symbol} · ${state.currentInterval.toUpperCase()}`;
+
+    // Show success
+    dom.chartLoading.classList.add('hidden');
+    dom.errorOverlay.classList.add('hidden');
+  }
+
+  // ================================================================
+  // WATCHLIST
+  // ================================================================
+
+  /** Render watchlist from cached prices */
+  function renderWatchlist(filterText = '') {
+    const el = dom.watchlist;
+    const filter = filterText.toLowerCase().trim();
+
+    const symbolsToShow = SYMBOLS.filter(s =>
+      !filter || s.toLowerCase().includes(filter)
+    );
+
+    el.innerHTML = '';
+
+    symbolsToShow.forEach(sym => {
+      const info = state.watchlistPrices[sym] || {};
+      const price = info.price;
+      const change = info.change;
+      const volume = info.volume;
+
+      const item = document.createElement('div');
+      item.className = 'watchlist-item' + (sym === state.currentSymbol ? ' active' : '');
+      item.dataset.symbol = sym;
+
+      item.innerHTML = `
+        <div class="watchlist-item__left">
+          <div class="watchlist-item__symbol">${shortSymbol(sym)}</div>
+          <div class="watchlist-item__volume">Vol ${volume ? formatVolume(volume) : '—'}</div>
+        </div>
+        <div class="watchlist-item__right">
+          <div class="watchlist-item__price">${price ? formatPrice(price) : '—'}</div>
+          <div class="watchlist-item__change ${changeClass(change)}">${change !== undefined ? formatChange(change) : '—'}</div>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        switchSymbol(sym);
+        // Close mobile sidebar
+        dom.sidebar.classList.remove('open');
+        dom.sidebarOverlay.classList.remove('show');
+      });
+
+      el.appendChild(item);
+    });
+
+    dom.watchlistCount.textContent = symbolsToShow.length;
+  }
+
+  /** Update watchlist prices from fetched data */
+  function updateWatchlistPrices(prices) {
+    Object.assign(state.watchlistPrices, prices);
+    renderWatchlist(dom.watchlistSearch.value);
+  }
+
+  // ================================================================
+  // TOP BAR & RIGHT PANEL UPDATE
+  // ================================================================
+
+  function updateTopBarAndPanel(info) {
+    if (!info) return;
+
+    const price = info.price;
+    const change = info.change;
+    const high = info.high;
+    const low = info.low;
+    const volume = info.volume;
+    const quoteVolume = info.quoteVolume;
+
+    // Symbol info
+    dom.symbolName.textContent = state.currentSymbol;
+    dom.currentPrice.textContent = price ? formatPrice(price) : '—';
+
+    const changeEl = dom.priceChange;
+    changeEl.textContent = change !== undefined ? formatChange(change) : '—';
+    changeEl.className = 'top-bar__change ' + changeClass(change);
+
+    // Stats
+    dom.statHigh.textContent = high ? formatPrice(high) : '—';
+    dom.statLow.textContent = low ? formatPrice(low) : '—';
+    dom.statVolume.textContent = volume ? formatVolume(volume) : '—';
+
+    // Right panel
+    dom.infoChange.textContent = change !== undefined ? formatChange(change) : '—';
+    dom.infoChange.className = 'price-info__value ' + changeClass(change);
+    dom.infoHigh.textContent = high ? formatPrice(high) : '—';
+    dom.infoLow.textContent = low ? formatPrice(low) : '—';
+    dom.infoVolume.textContent = volume ? formatVolume(volume) + ' ' + shortSymbol(state.currentSymbol) : '—';
+    dom.infoTurnover.textContent = quoteVolume ? '$' + formatVolume(quoteVolume) : '—';
+    dom.infoSymbol.textContent = state.currentSymbol;
+  }
+
+  // ================================================================
+  // DATA LOADING (CORE)
+  // ================================================================
+
+  let loadAborted = false;
+
+  async function loadData(symbol, interval) {
+    loadAborted = false;
+    dom.chartLoading.classList.remove('hidden');
+    dom.errorOverlay.classList.add('hidden');
+    setStatus('connecting', 'Loading data...');
+
+    try {
+      // Fetch klines
+      const klines = await fetchKlines(symbol, interval);
+      if (loadAborted) return;
+
+      // Cache last klines
+      state.lastKlines = klines;
+
+      // Update chart
+      updateCharts(klines, symbol);
+
+      // Fetch 24hr ticker for this symbol
+      try {
+        const ticker = await fetch24hrTicker(symbol);
+        if (!loadAborted) {
+          const info = {
+            price: parseFloat(ticker.lastPrice),
+            change: parseFloat(ticker.priceChangePercent),
+            high: parseFloat(ticker.highPrice),
+            low: parseFloat(ticker.lowPrice),
+            volume: parseFloat(ticker.volume),
+            quoteVolume: parseFloat(ticker.quoteVolume),
+          };
+          updateTopBarAndPanel(info);
+
+          // Also update in watchlist
+          state.watchlistPrices[symbol] = info;
+          renderWatchlist(dom.watchlistSearch.value);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch 24hr ticker:', err.message);
+      }
+
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      if (!loadAborted) {
+        dom.chartLoading.classList.add('hidden');
+        dom.errorOverlay.classList.remove('hidden');
+        dom.errorText.textContent = `Failed to load data for ${symbol}: ${err.message}`;
+        setStatus('disconnected', 'Error: ' + err.message);
+      }
+    }
+  }
+
+  // ================================================================
+  // SYMBOL & TIMEFRAME SWITCHING
+  // ================================================================
+
+  function switchSymbol(symbol) {
+    if (symbol === state.currentSymbol) return;
+    state.currentSymbol = symbol;
+    dom.symbolName.textContent = symbol;
+
+    // Update active in watchlist
+    $$('.watchlist-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.symbol === symbol);
+    });
+
+    // Load new data
+    loadData(symbol, state.currentInterval);
+  }
+
+  function switchInterval(interval) {
+    if (interval === state.currentInterval) return;
+    state.currentInterval = interval;
+
+    // Update active button
+    $$('.timeframe-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.interval === interval);
+    });
+
+    // Load new data
+    loadData(state.currentSymbol, interval);
+  }
+
+  // ================================================================
+  // STATUS BAR
+  // ================================================================
+
+  function setStatus(stateType, text) {
+    const dot = dom.statusDot;
+    dot.className = 'status-bar__dot';
+    if (stateType === 'connected') dot.classList.add('connected');
+    else if (stateType === 'connecting') dot.classList.add('connecting');
+    else dot.classList.add('disconnected');
+
+    dom.statusText.textContent = text;
+  }
+
+  // ================================================================
+  // REFRESH LOOP
+  // ================================================================
+
+  /** Refresh the current chart data */
+  async function refreshCurrentData() {
+    if (state.isRefreshing) return;
+    state.isRefreshing = true;
+
+    try {
+      const klines = await fetchKlines(state.currentSymbol, state.currentInterval, 50);
+      if (klines && klines.length > 0) {
+        state.lastKlines = klines;
+        updateCharts(klines, state.currentSymbol);
+      }
+
+      // Refresh 24hr ticker
+      try {
+        const ticker = await fetch24hrTicker(state.currentSymbol);
+        const info = {
+          price: parseFloat(ticker.lastPrice),
+          change: parseFloat(ticker.priceChangePercent),
+          high: parseFloat(ticker.highPrice),
+          low: parseFloat(ticker.lowPrice),
+          volume: parseFloat(ticker.volume),
+          quoteVolume: parseFloat(ticker.quoteVolume),
+        };
+        updateTopBarAndPanel(info);
+        state.watchlistPrices[state.currentSymbol] = info;
+      } catch (e) {
+        // Silently fail on ticker refresh
+      }
+
+      // Refresh watchlist prices
+      try {
+        const prices = await fetchAllWatchlistPrices();
+        updateWatchlistPrices(prices);
+      } catch (e) {
+        // Silently fail on watchlist refresh
+      }
+
+      setStatus('connected', 'Connected');
+      dom.lastUpdateTime.textContent = 'Last update: ' + formatTime(Date.now());
+
+    } catch (err) {
+      console.warn('Refresh failed:', err.message);
+      // Don't show error overlay for refresh failures
+    } finally {
+      state.isRefreshing = false;
+    }
+  }
+
+  // ================================================================
+  // EVENT HANDLERS
+  // ================================================================
+
+  // Timeframe buttons
+  dom.timeframeBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.timeframe-btn');
+    if (!btn) return;
+    switchInterval(btn.dataset.interval);
+  });
+
+  // Watchlist search filter
+  dom.watchlistSearch.addEventListener('input', (e) => {
+    renderWatchlist(e.target.value);
+  });
+
+  // Mobile menu toggle
+  dom.mobileMenuBtn.addEventListener('click', () => {
+    dom.sidebar.classList.toggle('open');
+    dom.sidebarOverlay.classList.toggle('show');
+  });
+
+  dom.sidebarOverlay.addEventListener('click', () => {
+    dom.sidebar.classList.remove('open');
+    dom.sidebarOverlay.classList.remove('show');
+  });
+
+  // Retry button
+  dom.retryBtn.addEventListener('click', () => {
+    loadData(state.currentSymbol, state.currentInterval);
+  });
+
+  // Window resize
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(handleResize, 100);
+  });
+
+  // ================================================================
+  // BOOTSTRAP
+  // ================================================================
+
+  async function init() {
+    try {
+      // Initialize chart instances
+      initCharts();
+
+      // Initial watchlist data fetch
+      try {
+        const initialPrices = await fetchAllWatchlistPrices();
+        state.watchlistPrices = initialPrices;
+        renderWatchlist();
+      } catch (err) {
+        console.warn('Failed to fetch initial watchlist prices:', err.message);
+        renderWatchlist();
+      }
+
+      // Load initial symbol data
+      await loadData(DEFAULT_SYMBOL, DEFAULT_INTERVAL);
+
+      // Start refresh interval
+      setInterval(refreshCurrentData, REFRESH_INTERVAL_MS);
+
+      // Set initial status
+      setStatus('connected', 'Connected');
+      dom.lastUpdateTime.textContent = 'Last update: ' + formatTime(Date.now());
+
+    } catch (err) {
+      console.error('Initialization failed:', err);
+      dom.chartLoading.classList.add('hidden');
+      dom.errorOverlay.classList.remove('hidden');
+      dom.errorText.textContent = 'Failed to initialize: ' + err.message;
+      setStatus('disconnected', 'Init failed');
+    }
+  }
+
+  // Start when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>
