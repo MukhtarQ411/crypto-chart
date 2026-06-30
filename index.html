@@ -2,846 +2,999 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TradingView — Cryptocurrency & Forex Markets</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='32' height='32' rx='6' fill='%232962FF'/%3E%3Ctext x='4' y='24' font-family='Arial' font-weight='bold' font-size='20' fill='white'%3ETV%3C/text%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#131722">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>CryptoCharts — Live TradingView</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg-primary: #131722;
-      --bg-secondary: #1e222d;
-      --bg-tertiary: #2a2e39;
-      --border-color: #2a2e39;
-      --accent: #2962FF;
-      --green: #089981;
-      --red: #f23645;
-      --text-primary: #d1d4dc;
-      --text-secondary: #787b86;
-      --text-muted: #434651;
-      --sidebar-width: 270px;
-      --right-panel-width: 280px;
-      --ticker-height: 40px;
-      --symbol-info-height: 55px;
-      --bottom-tab-height: 44px;
-      --header-height: 0px;
-      --transition-speed: 0.25s;
-    }
-
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      height: 100%;
-      width: 100%;
+      width: 100%; height: 100%;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 13px;
-      line-height: 1.4;
+      background: #131722;
+      color: #d1d4dc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
     }
 
-    /* ─── TICKER TAPE ─── */
-    #ticker-tape-wrapper {
-      height: var(--ticker-height);
+    /* ===== SAFE AREAS ===== */
+    .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+    /* ===== LAYOUT ===== */
+    #app {
+      display: flex; flex-direction: column;
+      height: 100vh; height: 100dvh;
       width: 100%;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      overflow: hidden;
-    }
-    #ticker-tape-wrapper .tradingview-widget-container { height: 100%; width: 100%; }
-    #ticker-tape-wrapper iframe { height: var(--ticker-height) !important; }
-
-    /* ─── LAYOUT ─── */
-    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
-
-    #main-area {
-      display: flex;
-      flex: 1;
-      min-height: 0;
-      width: 100%;
-    }
-
-    /* ─── LEFT SIDEBAR ─── */
-    #left-sidebar {
-      width: var(--sidebar-width);
-      flex-shrink: 0;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      transition: width var(--transition-speed) ease, margin var(--transition-speed) ease;
-      overflow: hidden;
       position: relative;
-    }
-    #left-sidebar.collapsed { width: 0; border-right: none; }
-    #left-sidebar .tradingview-widget-container { flex: 1; min-height: 0; }
-    #left-sidebar iframe { height: 100% !important; }
-
-    #sidebar-toggle {
-      position: absolute;
-      top: 8px;
-      right: -28px;
-      width: 28px;
-      height: 28px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-left: none;
-      border-radius: 0 4px 4px 0;
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      z-index: 10;
-      transition: color 0.15s;
-    }
-    #sidebar-toggle:hover { color: var(--accent); }
-
-    /* ─── CENTER ─── */
-    #center-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      background: var(--bg-primary);
-    }
-
-    /* Symbol Info Bar */
-    #symbol-info-wrapper {
-      height: var(--symbol-info-height);
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-secondary);
       overflow: hidden;
     }
-    #symbol-info-wrapper .tradingview-widget-container { height: 100%; }
-    #symbol-info-wrapper iframe { height: var(--symbol-info-height) !important; }
 
-    /* Main Chart */
+    /* --- Top Status Bar --- */
+    #status-bar {
+      display: flex; align-items: center;
+      height: 44px; min-height: 44px;
+      padding: 0 12px;
+      padding-top: env(safe-area-inset-top, 0px);
+      height: calc(44px + env(safe-area-inset-top, 0px));
+      min-height: calc(44px + env(safe-area-inset-top, 0px));
+      background: #131722;
+      border-bottom: 1px solid #2a2e39;
+      z-index: 10;
+      gap: 8px;
+    }
+    #status-bar .hamburger {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer;
+      background: none; border: none; color: #d1d4dc;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #status-bar .hamburger:active { opacity: 0.6; }
+    #live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #089981; flex-shrink: 0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    #symbol-name {
+      font-size: 15px; font-weight: 600; color: #d1d4dc;
+      white-space: nowrap; flex-shrink: 0;
+      cursor: pointer; padding: 4px 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #symbol-name:active { opacity: 0.6; }
+    #current-price {
+      font-size: 16px; font-weight: 700; color: #d1d4dc;
+      margin-left: auto; white-space: nowrap;
+    }
+    #price-change {
+      font-size: 13px; font-weight: 500;
+      white-space: nowrap; min-width: 48px; text-align: right;
+    }
+    #price-change.up { color: #089981; }
+    #price-change.down { color: #f23645; }
+
+    /* --- Chart Container --- */
     #chart-wrapper {
       flex: 1;
-      min-height: 0;
       position: relative;
       overflow: hidden;
+      min-height: 0;
+      background: #131722;
     }
-    #chart-wrapper .tradingview-widget-container {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
+    #tv-chart {
+      width: 100%; height: 100%;
+      position: absolute; top: 0; left: 0;
     }
-    #chart-wrapper iframe { width: 100% !important; height: 100% !important; }
 
-    /* Bottom Tab Bar */
-    #bottom-tab-bar {
-      height: var(--bottom-tab-height);
-      flex-shrink: 0;
+    /* --- Timeframe Bar --- */
+    #tf-bar {
       display: flex;
       align-items: center;
-      background: var(--bg-secondary);
-      border-top: 1px solid var(--border-color);
-      padding: 0 8px;
       gap: 2px;
+      padding: 6px 8px;
+      padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+      background: #131722;
+      border-top: 1px solid #2a2e39;
       overflow-x: auto;
-    }
-    #bottom-tab-bar::-webkit-scrollbar { height: 0; }
-
-    .bottom-tab {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 12px;
-      border-radius: 4px 4px 0 0;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       white-space: nowrap;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      will-change: opacity, transform;
+    }
+    #tf-bar::-webkit-scrollbar { display: none; }
+    #tf-bar.hidden {
+      opacity: 0;
+      transform: translateY(100%);
+      pointer-events: none;
+    }
+    .tf-btn {
+      flex-shrink: 0;
+      min-width: 44px; height: 36px;
+      padding: 0 10px;
+      border: none; border-radius: 6px;
+      background: transparent;
+      color: #787b86;
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
       transition: background 0.15s, color 0.15s;
-      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    .bottom-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-    .bottom-tab.active { background: var(--bg-primary); color: var(--accent); }
+    .tf-btn:active { background: #2a2e39; }
+    .tf-btn.active { color: #d1d4dc; background: #2a2e39; font-weight: 600; }
 
-    /* Bottom Panel Content */
-    #bottom-panel {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-      background: var(--bg-primary);
-      border-top: 1px solid var(--border-color);
-      flex-shrink: 0;
-    }
-    #bottom-panel.open { max-height: 350px; }
-    #bottom-panel-inner {
+    /* --- Bottom Tool Bar --- */
+    #tool-bar {
       display: flex;
-      height: 350px;
-      padding: 0;
-    }
-    #bottom-panel-inner .tradingview-widget-container { flex: 1; height: 100%; }
-    #bottom-panel-inner iframe { height: 100% !important; }
-
-    #bottom-panel-close {
-      position: absolute;
-      top: 4px;
-      right: 8px;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 16px;
-      z-index: 5;
-      padding: 2px 6px;
-      border-radius: 3px;
-    }
-    #bottom-panel-close:hover { color: var(--text-primary); background: var(--bg-tertiary); }
-
-    /* ─── RIGHT PANEL ─── */
-    #right-panel {
-      width: var(--right-panel-width);
-      flex-shrink: 0;
-      background: var(--bg-secondary);
-      border-left: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      transition: width var(--transition-speed) ease, margin var(--transition-speed) ease;
-      overflow: hidden;
-    }
-    #right-panel.collapsed { width: 0; border-left: none; }
-
-    #right-panel-toggle {
-      position: absolute;
-      top: 8px;
-      left: -28px;
-      width: 28px;
-      height: 28px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-right: none;
-      border-radius: 4px 0 0 4px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
+      align-items: center; justify-content: space-around;
+      height: 50px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      height: calc(50px + env(safe-area-inset-bottom, 0px));
+      min-height: calc(50px + env(safe-area-inset-bottom, 0px));
+      background: #1e222d;
+      border-top: 1px solid #2a2e39;
       z-index: 10;
+    }
+    .tool-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px;
+      min-width: 44px; min-height: 44px;
+      background: none; border: none; color: #787b86;
+      font-size: 20px; cursor: pointer;
+      padding: 4px 12px;
       transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    #right-panel-toggle:hover { color: var(--accent); }
+    .tool-btn:active { color: #d1d4dc; }
+    .tool-btn span { font-size: 9px; font-weight: 500; color: inherit; }
 
-    #right-panel { position: relative; }
+    /* ===== OVERLAYS & DRAWERS ===== */
 
-    /* Right Panel Tabs */
-    #right-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      flex-shrink: 0;
-    }
-    #right-tabs button {
-      flex: 1;
-      padding: 8px 4px;
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 11px;
-      font-family: inherit;
-      transition: color 0.15s, border-color 0.15s;
-      text-align: center;
-    }
-    #right-tabs button:hover { color: var(--text-primary); }
-    #right-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    #right-panel-content {
-      flex: 1;
-      min-height: 0;
-      position: relative;
-    }
-    #right-panel-content > div {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: none;
-    }
-    #right-panel-content > div.active { display: block; }
-    #right-panel-content iframe { height: 100% !important; }
-
-    /* ─── UTILITY ─── */
-    .tv-container { height: 100%; width: 100%; position: relative; }
-    .tv-container .tradingview-widget-container { height: 100%; width: 100%; }
-
-    /* ─── MOBILE ─── */
-    @media (max-width: 768px) {
-      :root {
-        --sidebar-width: 0px;
-        --right-panel-width: 0px;
-        --ticker-height: 36px;
-        --symbol-info-height: 48px;
-      }
-      #left-sidebar { position: fixed; top: var(--ticker-height); left: 0; bottom: 0; z-index: 100; width: 260px; transform: translateX(-100%); transition: transform 0.3s ease; border-right: 1px solid var(--border-color); }
-      #left-sidebar.open-mobile { transform: translateX(0); }
-      #sidebar-toggle { display: none; }
-      #mobile-sidebar-btn { display: flex !important; }
-      #right-panel { display: none; }
-    }
-    @media (min-width: 769px) {
-      #mobile-sidebar-btn { display: none !important; }
-      #mobile-sidebar-overlay { display: none !important; }
-    }
-
-    #mobile-sidebar-btn {
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 16px;
-      padding: 4px;
-      border-radius: 4px;
-      margin-right: 4px;
-    }
-    #mobile-sidebar-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-
-    #mobile-sidebar-overlay {
+    /* --- Backdrop --- */
+    .overlay-backdrop {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 99;
-      display: none;
+      background: rgba(0,0,0,0.6);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      will-change: opacity;
     }
-    #mobile-sidebar-overlay.open { display: block; }
+    .overlay-backdrop.open { opacity: 1; pointer-events: auto; }
 
-    /* Loading placeholder */
-    .widget-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      font-size: 12px;
+    /* --- Watchlist Drawer (left) --- */
+    #watchlist-drawer {
+      position: fixed;
+      top: 0; left: 0;
+      width: 320px; max-width: 85vw;
+      height: 100vh; height: 100dvh;
+      background: #1e222d;
+      z-index: 60;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+      display: flex; flex-direction: column;
+      padding-top: env(safe-area-inset-top, 0px);
     }
+    #watchlist-drawer.open { transform: translateX(0); }
+    #watchlist-drawer .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #2a2e39;
+      min-height: 52px;
+    }
+    #watchlist-drawer .drawer-header h2 {
+      font-size: 16px; font-weight: 600; color: #d1d4dc;
+    }
+    .close-btn {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; color: #787b86;
+      font-size: 22px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .close-btn:active { opacity: 0.6; }
+    #watchlist-drawer .drawer-body {
+      flex: 1; overflow: hidden;
+      min-height: 0;
+    }
+    #watchlist-drawer .drawer-body iframe {
+      width: 100%; height: 100%; border: none;
+    }
+
+    /* --- Right Panel (bottom sheet) --- */
+    #right-sheet {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      max-height: 80vh;
+      background: #1e222d;
+      z-index: 60;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+      border-radius: 16px 16px 0 0;
+      display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    #right-sheet.open { transform: translateY(0); }
+
+    /* Drag Handle */
+    #right-sheet .drag-handle {
+      width: 100%; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      cursor: grab;
+      touch-action: none;
+    }
+    #right-sheet .drag-handle::after {
+      content: '';
+      width: 36px; height: 4px;
+      background: #2a2e39; border-radius: 2px;
+    }
+
+    /* Sheet Tab Bar */
+    #sheet-tabs {
+      display: flex; flex-shrink: 0;
+      border-bottom: 1px solid #2a2e39;
+      padding: 0 8px;
+    }
+    .sheet-tab {
+      flex: 1; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; color: #787b86;
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .sheet-tab:active { opacity: 0.6; }
+    .sheet-tab.active { color: #d1d4dc; border-bottom-color: #2962FF; }
+
+    /* Sheet Body */
+    #sheet-body {
+      flex: 1; overflow: hidden; min-height: 0;
+      position: relative;
+    }
+    .sheet-content {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .sheet-content.active { opacity: 1; pointer-events: auto; }
+    .sheet-content iframe { width: 100%; height: 100%; border: none; }
+
+    /* --- Symbols Search Overlay --- */
+    #symbol-search {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #131722;
+      z-index: 70;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    #symbol-search.open { opacity: 1; pointer-events: auto; }
+    #symbol-search .search-header {
+      display: flex; align-items: center;
+      gap: 8px; padding: 8px 12px;
+      border-bottom: 1px solid #2a2e39;
+    }
+    #symbol-search .search-header input {
+      flex: 1; height: 40px;
+      background: #1e222d; border: 1px solid #2a2e39; border-radius: 8px;
+      padding: 0 12px; color: #d1d4dc; font-size: 15px;
+      outline: none;
+    }
+    #symbol-search .search-header input:focus { border-color: #2962FF; }
+    #symbol-search .search-header input::placeholder { color: #787b86; }
+    #symbol-search .search-results {
+      flex: 1; overflow-y: auto;
+      padding: 8px;
+    }
+    .search-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 8px; border-bottom: 1px solid #2a2e39;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .search-item:active { background: #2a2e39; }
+    .search-item .si-name { font-size: 14px; font-weight: 500; color: #d1d4dc; }
+    .search-item .si-desc { font-size: 12px; color: #787b86; }
+    .search-item .si-price { font-size: 14px; font-weight: 600; }
+    .search-item .si-change { font-size: 12px; }
+    .search-item .si-change.up { color: #089981; }
+    .search-item .si-change.down { color: #f23645; }
+
+    /* Auto-hide timer indicator */
+    #hide-indicator {
+      position: absolute; bottom: 4px; right: 8px;
+      font-size: 10px; color: #787b86; opacity: 0.5;
+      pointer-events: none; z-index: 5;
+    }
+
+    /* Loading */
+    #loading {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #131722;
+      z-index: 100;
+      transition: opacity 0.4s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #2a2e39;
+      border-top-color: #2962FF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { margin-top: 12px; font-size: 13px; color: #787b86; }
+
+    /* Utility */
+    .hidden { display: none !important; }
+
+    /* Swipe hint zones */
+    .swipe-zone {
+      position: fixed; top: 0; bottom: 0;
+      width: 16px; z-index: 5;
+    }
+    .swipe-zone.left { left: 0; }
+    .swipe-zone.right { right: 0; }
   </style>
 </head>
 <body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <p>Loading charts…</p>
+    </div>
 
-<div id="app">
+    <!-- Status Bar -->
+    <header id="status-bar">
+      <button class="hamburger" id="menuBtn" aria-label="Open watchlist">☰</button>
+      <span id="live-dot"></span>
+      <span id="symbol-name">BTC/USD</span>
+      <span id="current-price">—</span>
+      <span id="price-change">—</span>
+    </header>
 
-  <!-- ═══ TICKER TAPE ═══ -->
-  <div id="ticker-tape-wrapper">
-    <div class="tradingview-widget-container">
-      <div id="ticker-tape"></div>
-      <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-      {
-        "symbols": [
-          {"description": "BTC/USD", "proName": "BITSTAMP:BTCUSD"},
-          {"description": "ETH/USD", "proName": "BITSTAMP:ETHUSD"},
-          {"description": "SOL/USD", "proName": "BITSTAMP:SOLUSD"},
-          {"description": "Gold", "proName": "OANDA:XAUUSD"},
-          {"description": "Silver", "proName": "OANDA:XAGUSD"},
-          {"description": "S&P 500", "proName": "FOREXCOM:SPX500"},
-          {"description": "Nasdaq", "proName": "FOREXCOM:NSXUSD"},
-          {"description": "Dow Jones", "proName": "FOREXCOM:DJI"},
-          {"description": "Oil", "proName": "NYMEX:CL1!"},
-          {"description": "EUR/USD", "proName": "FX:EURUSD"},
-          {"description": "GBP/USD", "proName": "FX:GBPUSD"},
-          {"description": "USD/JPY", "proName": "FX:USDJPY"}
-        ],
-        "showSymbolLogo": true,
-        "colorTheme": "dark",
-        "isTransparent": false,
-        "largeChartUrl": "",
-        "displayMode": "adaptive",
-        "locale": "en"
-      }
-      </script>
+    <!-- Chart -->
+    <div id="chart-wrapper">
+      <div id="tv-chart"></div>
+      <div id="hide-indicator"></div>
+    </div>
+
+    <!-- Timeframe Bar -->
+    <div id="tf-bar">
+      <button class="tf-btn" data-interval="1">1m</button>
+      <button class="tf-btn" data-interval="5">5m</button>
+      <button class="tf-btn" data-interval="15">15m</button>
+      <button class="tf-btn" data-interval="30">30m</button>
+      <button class="tf-btn active" data-interval="60">1H</button>
+      <button class="tf-btn" data-interval="240">4H</button>
+      <button class="tf-btn" data-interval="1D">1D</button>
+      <button class="tf-btn" data-interval="1W">1W</button>
+      <button class="tf-btn" data-interval="1M">1M</button>
+    </div>
+
+    <!-- Bottom Tool Bar -->
+    <nav id="tool-bar">
+      <button class="tool-btn" data-panel="indicators" aria-label="Indicators">📊<span>Indicators</span></button>
+      <button class="tool-btn" data-panel="watchlist" aria-label="Watchlist">📋<span>Watchlist</span></button>
+      <button class="tool-btn" data-panel="draw" aria-label="Drawing Tools">🖌<span>Draw</span></button>
+      <button class="tool-btn" data-panel="alerts" aria-label="Alerts">🔔<span>Alerts</span></button>
+    </nav>
+  </div>
+
+  <!-- Swipe Zones -->
+  <div class="swipe-zone left" id="swipeLeft"></div>
+  <div class="swipe-zone right" id="swipeRight"></div>
+
+  <!-- Backdrop -->
+  <div class="overlay-backdrop" id="backdrop"></div>
+
+  <!-- Watchlist Drawer (Left) -->
+  <aside id="watchlist-drawer">
+    <div class="drawer-header">
+      <h2>Watchlist</h2>
+      <button class="close-btn" id="closeWatchlist" aria-label="Close watchlist">✕</button>
+    </div>
+    <div class="drawer-body" id="watchlist-body">
+      <!-- TradingView Watchlist widget loaded dynamically -->
+    </div>
+  </aside>
+
+  <!-- Right Bottom Sheet -->
+  <div id="right-sheet">
+    <div class="drag-handle" id="dragHandle"></div>
+    <div id="sheet-tabs">
+      <button class="sheet-tab active" data-tab="overview">Overview</button>
+      <button class="sheet-tab" data-tab="technicals">Technicals</button>
+      <button class="sheet-tab" data-tab="calendar">Calendar</button>
+    </div>
+    <div id="sheet-body">
+      <div class="sheet-content active" id="sheet-overview">
+        <!-- Market Overview widget loaded dynamically -->
+      </div>
+      <div class="sheet-content" id="sheet-technicals">
+        <!-- Technical Analysis widget loaded dynamically -->
+      </div>
+      <div class="sheet-content" id="sheet-calendar">
+        <!-- Economic Calendar widget loaded dynamically -->
+      </div>
     </div>
   </div>
 
-  <!-- ═══ MAIN AREA ═══ -->
-  <div id="main-area">
+  <!-- Symbol Search Overlay -->
+  <div id="symbol-search">
+    <div class="search-header">
+      <input type="text" id="searchInput" placeholder="Search symbol…" autocomplete="off">
+      <button class="close-btn" id="closeSearch" aria-label="Cancel">✕</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
 
-    <!-- ─── LEFT SIDEBAR ─── -->
-    <div id="left-sidebar">
-      <button id="sidebar-toggle" title="Toggle Watchlist">◀</button>
-      <div class="tradingview-widget-container" style="height:100%;width:100%;">
-        <div id="watchlist"></div>
-        <script src="https://s3.tradingview.com/external-embedding/embed-widget-watchlist.js" async>
-        {
-          "symbols": [
-            ["BITSTAMP:BTCUSD", "BITSTAMP:ETHUSD", "BITSTAMP:SOLUSD", "BITSTAMP:ADAUSD", "BITSTAMP:XRPUSD", "BITSTAMP:DOGEUSD"],
-            ["OANDA:XAUUSD", "OANDA:XAGUSD", "OANDA:WTICOUSD"],
-            ["FX:EURUSD", "FX:GBPUSD", "FX:USDJPY", "FX:USDCHF"],
-            ["FOREXCOM:SPX500", "FOREXCOM:NSXUSD", "FOREXCOM:DJI"]
+  <!-- TradingView Library -->
+  <script src="https://s3.tradingview.com/tv.js"></script>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // ===== CONFIG =====
+      const CURRENT_SYMBOL = 'BITSTAMP:BTCUSD';
+      let activeInterval = '60';
+      let tvWidget = null;
+      let priceUpdateInterval = null;
+      let tfHideTimeout = null;
+
+      // ===== DOM REFS =====
+      const $ = (id) => document.getElementById(id);
+      const symbolName = $('symbol-name');
+      const currentPrice = $('current-price');
+      const priceChange = $('price-change');
+      const chartEl = $('tv-chart');
+      const tfBar = $('tf-bar');
+      const backdrop = $('backdrop');
+      const watchlistDrawer = $('watchlist-drawer');
+      const rightSheet = $('right-sheet');
+      const symbolSearch = $('symbol-search');
+      const searchInput = $('searchInput');
+      const searchResults = $('searchResults');
+      const loading = $('loading');
+
+      // ===== TRADINGVIEW WIDGET =====
+      function initChart(symbol) {
+        if (tvWidget) {
+          try { tvWidget.remove(); } catch(e) {}
+          tvWidget = null;
+        }
+
+        tvWidget = new TradingView.widget({
+          container_id: 'tv-chart',
+          width: '100%',
+          height: '100%',
+          symbol: symbol,
+          interval: activeInterval,
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#131722',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          save_image: true,
+          hide_top_toolbar: false,
+          hide_legend: false,
+          withdateranges: true,
+          studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies'],
+          support_host: 'https://www.tradingview.com',
+          disabled_features: [
+            'use_localstorage_for_settings',
+            'header_symbol_search',
+            'symbol_search_hot_key',
+            'save_shortcut',
+            'compare_symbol',
+            'border_around_the_chart'
           ],
-          "colorTheme": "dark",
-          "isTransparent": false,
-          "showSymbolLogo": true,
-          "largeChartUrl": "",
-          "width": "100%",
-          "height": "100%",
-          "locale": "en"
-        }
-        </script>
-      </div>
-    </div>
+          enabled_features: ['hide_left_toolbar_by_default'],
+          overrides: {
+            'paneProperties.background': '#131722',
+            'paneProperties.vertGridProperties.color': '#1e222d',
+            'paneProperties.horzGridProperties.color': '#1e222d',
+            'scalesProperties.textColor': '#787b86'
+          },
+          loading_screen: { backgroundColor: '#131722' }
+        });
 
-    <!-- ─── CENTER ─── -->
-    <div id="center-area">
+        tvWidget.onChartReady(() => {
+          loading.classList.add('hidden');
+          startPricePoller(symbol);
+          syncSymbolName(symbol);
 
-      <!-- Symbol Info Bar -->
-      <div id="symbol-info-wrapper">
-        <div class="tradingview-widget-container" style="height:100%;">
-          <div id="symbol-info"></div>
-          <script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-          {
-            "symbol": "BITSTAMP:BTCUSD",
-            "width": "100%",
-            "locale": "en",
-            "colorTheme": "dark",
-            "isTransparent": false,
-            "largeChartUrl": "",
-            "height": "100%"
+          // Listen for symbol changes within the widget
+          tvWidget.chart().onSymbolChanged().subscribe(null, () => {
+            const sym = tvWidget.chart().symbol();
+            if (sym) {
+              syncSymbolName(sym);
+              startPricePoller(sym);
+              updateSheetSymbol(sym);
+            }
+          });
+
+          tvWidget.chart().onIntervalChanged().subscribe(null, (interval) => {
+            activeInterval = interval;
+            document.querySelectorAll('.tf-btn').forEach(b => {
+              b.classList.toggle('active', b.dataset.interval === interval);
+            });
+          });
+        });
+      }
+
+      function syncSymbolName(symbol) {
+        const display = symbol.replace(/^[A-Z]+:/, '').replace('/', '');
+        symbolName.textContent = display;
+        updateSheetSymbol(symbol);
+      }
+
+      function updateSheetSymbol(symbol) {
+        // Reload technical analysis with new symbol
+        loadTechnicalAnalysis(symbol);
+      }
+
+      // ===== PRICE POLLING (via fetch for real-time-ish updates) =====
+      function startPricePoller(symbol) {
+        if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+
+        priceUpdateInterval = setInterval(() => {
+          fetchPrice(symbol);
+        }, 5000);
+        fetchPrice(symbol);
+      }
+
+      let lastPrice = null;
+      function fetchPrice(symbol) {
+        // Use TradingView's own quote endpoint — lightweight
+        const base = symbol.split(':')[1] || symbol;
+        // We use a simple fetch; if it fails, silently retry
+        fetch(`https://quote-api.tradingview.com/v1/quotes/symbol?symbol=${symbol}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.quotes && data.quotes.length > 0) {
+              const q = data.quotes[0];
+              const price = q.close || q.last;
+              if (price) {
+                currentPrice.textContent = '$' + Number(price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (lastPrice !== null) {
+                  const change = ((price - lastPrice) / lastPrice) * 100;
+                  const absChange = price - lastPrice;
+                  priceChange.textContent = (absChange > 0 ? '+' : '') + absChange.toFixed(2) + ' (' + (change > 0 ? '+' : '') + change.toFixed(2) + '%)';
+                  priceChange.className = change >= 0 ? 'up' : 'down';
+                }
+                lastPrice = price;
+              }
+            }
+          })
+          .catch(() => { /* silent fallback */ });
+      }
+
+      // ===== TIMEFRAME BAR =====
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const interval = this.dataset.interval;
+          if (tvWidget) {
+            tvWidget.chart().setResolution(interval, () => {});
           }
-          </script>
-        </div>
-      </div>
-
-      <!-- Main Chart -->
-      <div id="chart-wrapper">
-        <div class="tradingview-widget-container" style="height:100%;">
-          <div id="tv-chart"></div>
-        </div>
-      </div>
-
-      <!-- Bottom Tab Bar -->
-      <div id="bottom-tab-bar">
-        <button id="mobile-sidebar-btn" title="Toggle Watchlist">☰</button>
-        <button class="bottom-tab" data-tab="calendar" title="Economic Calendar">📅 Calendar</button>
-        <button class="bottom-tab" data-tab="overview" title="Market Overview">📊 Markets</button>
-        <button class="bottom-tab" data-tab="mini-chart" title="Mini Chart">📈 Gold Chart</button>
-      </div>
-
-      <!-- Bottom Panel -->
-      <div id="bottom-panel">
-        <div id="bottom-panel-inner" style="position:relative;">
-          <button id="bottom-panel-close">✕</button>
-          <div id="bottom-calendar" class="tv-container" style="display:none;">
-            <div class="tradingview-widget-container">
-              <div id="economic-calendar"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
-              {
-                "colorTheme": "dark",
-                "isTransparent": false,
-                "width": "100%",
-                "height": "100%",
-                "locale": "en",
-                "importanceFilter": "-1,0,1",
-                "currencyFilter": "USD,EUR,GBP,JPY,CHF,AUD,CAD"
-              }
-              </script>
-            </div>
-          </div>
-          <div id="bottom-overview" class="tv-container" style="display:none;">
-            <div class="tradingview-widget-container">
-              <div id="market-overview-bottom"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-              {
-                "colorTheme": "dark",
-                "dateRange": "12M",
-                "showChart": true,
-                "largeChartUrl": "",
-                "isTransparent": false,
-                "showSymbolLogo": true,
-                "showFloatingTooltip": false,
-                "width": "100%",
-                "height": "100%",
-                "locale": "en",
-                "plotLineColorGrowing": "rgba(8, 153, 129, 1)",
-                "plotLineColorFalling": "rgba(242, 54, 69, 1)",
-                "gridLineColor": "rgba(42, 46, 57, 1)",
-                "scaleFontColor": "rgba(120, 123, 134, 1)",
-                "belowLineFillColorGrowing": "rgba(8, 153, 129, 0.12)",
-                "belowLineFillColorFalling": "rgba(242, 54, 69, 0.12)",
-                "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
-                "tabs": [
-                  {"title": "Indices", "symbols": [{"s":"FOREXCOM:SPX500"},{"s":"FOREXCOM:NSXUSD"},{"s":"FOREXCOM:DJI"}]},
-                  {"title": "Forex", "symbols": [{"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"}]},
-                  {"title": "Crypto", "symbols": [{"s":"BITSTAMP:BTCUSD"},{"s":"BITSTAMP:ETHUSD"},{"s":"BITSTAMP:SOLUSD"}]}
-                ]
-              }
-              </script>
-            </div>
-          </div>
-          <div id="bottom-mini-chart" class="tv-container" style="display:none;">
-            <div class="tradingview-widget-container">
-              <div id="mini-chart"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-              {
-                "symbol": "OANDA:XAUUSD",
-                "width": "100%",
-                "height": "100%",
-                "locale": "en",
-                "dateRange": "1M",
-                "colorTheme": "dark",
-                "isTransparent": false,
-                "autosize": true,
-                "largeChartUrl": ""
-              }
-              </script>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ─── RIGHT PANEL ─── -->
-    <div id="right-panel">
-      <button id="right-panel-toggle" title="Toggle Right Panel">▶</button>
-      <div id="right-tabs">
-        <button class="active" data-tab="right-overview">Overview</button>
-        <button data-tab="right-technical">Technicals</button>
-        <button data-tab="right-calendar">Calendar</button>
-      </div>
-      <div id="right-panel-content">
-        <!-- Overview -->
-        <div id="right-overview" class="active">
-          <div class="tradingview-widget-container" style="height:100%;">
-            <div id="market-overview"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {
-              "colorTheme": "dark",
-              "dateRange": "12M",
-              "showChart": true,
-              "largeChartUrl": "",
-              "isTransparent": false,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": false,
-              "width": "100%",
-              "height": "100%",
-              "locale": "en",
-              "plotLineColorGrowing": "rgba(8, 153, 129, 1)",
-              "plotLineColorFalling": "rgba(242, 54, 69, 1)",
-              "gridLineColor": "rgba(42, 46, 57, 1)",
-              "scaleFontColor": "rgba(120, 123, 134, 1)",
-              "belowLineFillColorGrowing": "rgba(8, 153, 129, 0.12)",
-              "belowLineFillColorFalling": "rgba(242, 54, 69, 0.12)",
-              "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
-              "tabs": [
-                {"title":"Indices","symbols":[{"s":"FOREXCOM:SPX500"},{"s":"FOREXCOM:NSXUSD"},{"s":"FOREXCOM:DJI"},{"s":"INDEX:IXIC"}]},
-                {"title":"Forex","symbols":[{"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"},{"s":"FX:USDCHF"}]},
-                {"title":"Commodities","symbols":[{"s":"OANDA:XAUUSD"},{"s":"OANDA:XAGUSD"},{"s":"NYMEX:CL1!"},{"s":"NYMEX:NG1!"}]},
-                {"title":"Crypto","symbols":[{"s":"BITSTAMP:BTCUSD"},{"s":"BITSTAMP:ETHUSD"},{"s":"BITSTAMP:SOLUSD"},{"s":"BITSTAMP:ADAUSD"}]}
-              ]
-            }
-            </script>
-          </div>
-        </div>
-        <!-- Technical Analysis -->
-        <div id="right-technical">
-          <div class="tradingview-widget-container" style="height:100%;">
-            <div id="technical-analysis"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-            {
-              "interval": "1m",
-              "width": "100%",
-              "height": "100%",
-              "symbol": "BITSTAMP:BTCUSD",
-              "showIntervalTabs": true,
-              "colorTheme": "dark",
-              "isTransparent": false,
-              "largeChartUrl": "",
-              "locale": "en"
-            }
-            </script>
-          </div>
-        </div>
-        <!-- Calendar -->
-        <div id="right-calendar">
-          <div class="tradingview-widget-container" style="height:100%;">
-            <div id="economic-calendar-right"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
-            {
-              "colorTheme": "dark",
-              "isTransparent": false,
-              "width": "100%",
-              "height": "100%",
-              "locale": "en",
-              "importanceFilter": "-1,0,1",
-              "currencyFilter": "USD,EUR,GBP,JPY,CHF,AUD,CAD"
-            }
-            </script>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /main-area -->
-</div><!-- /app -->
-
-<!-- ═══ TRADINGVIEW ADVANCED CHART ═══ -->
-<script src="https://s3.tradingview.com/tv.js"></script>
-<script>
-(function() {
-  'use strict';
-
-  // ─── STATE ───
-  const state = {
-    currentSymbol: 'BITSTAMP:BTCUSD',
-    leftCollapsed: false,
-    rightCollapsed: false,
-    bottomOpen: false,
-    currentBottomTab: null
-  };
-
-  // ─── DOM REFS ───
-  const chartContainer = document.getElementById('tv-chart');
-  const leftSidebar = document.getElementById('left-sidebar');
-  const rightPanel = document.getElementById('right-panel');
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  const rightPanelToggle = document.getElementById('right-panel-toggle');
-  const bottomPanel = document.getElementById('bottom-panel');
-  const bottomPanelClose = document.getElementById('bottom-panel-close');
-  const bottomTabs = document.querySelectorAll('.bottom-tab[data-tab]');
-  const rightTabs = document.querySelectorAll('#right-tabs button');
-  const rightContentPanels = document.querySelectorAll('#right-panel-content > div');
-  const mobileSidebarBtn = document.getElementById('mobile-sidebar-btn');
-  const mobileOverlay = document.createElement('div');
-  mobileOverlay.id = 'mobile-sidebar-overlay';
-  document.body.appendChild(mobileOverlay);
-
-  // ─── INIT ADVANCED CHART ───
-  var widget = new TradingView.widget({
-    "container_id": "tv-chart",
-    "width": "100%",
-    "height": "100%",
-    "symbol": state.currentSymbol,
-    "interval": "60",
-    "timezone": "Etc/UTC",
-    "theme": "dark",
-    "style": "1",
-    "locale": "en",
-    "toolbar_bg": "#131722",
-    "enable_publishing": false,
-    "allow_symbol_change": true,
-    "save_image": true,
-    "details": true,
-    "studies": [
-      "RSI@tv-basicstudies",
-      "MASimple@tv-basicstudies",
-      "Volume@tv-basicstudies"
-    ],
-    "hide_top_toolbar": false,
-    "hide_legend": false,
-    "withdateranges": true,
-    "show_popup_button": true,
-    "popup_width": "1000",
-    "popup_height": "650",
-    "support_host": "https://www.tradingview.com",
-    "hotlist": true,
-    "calendar": true
-  });
-
-  // ─── UPDATE SYMBOL IN ALL WIDGETS ───
-  function setSymbol(symbol) {
-    state.currentSymbol = symbol;
-
-    // Update main chart
-    try { widget.setSymbol(symbol); } catch(e) {}
-
-    // Update Technical Analysis widget (right panel)
-    // We can't easily re-render TradingView's external widgets after load,
-    // but the technical analysis widget on the right panel will be reloaded
-    // by swapping its iframe src. TradingView doesn't expose a JS API for
-    // symbol update on the technical-analysis embed, so we reload it.
-    reloadWidget('right-technical', 'technical-analysis');
-    reloadWidget('symbol-info-wrapper', 'symbol-info');
-  }
-
-  // ─── RELOAD A TRADINGVIEW EXTERNAL WIDGET ───
-  function reloadWidget(containerId, scriptTargetId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    // Find the script tag inside this container that loads an external widget
-    const scripts = container.querySelectorAll('script[src*="external-embedding"]');
-    scripts.forEach(function(script) {
-      try {
-        var oldSrc = script.src;
-        // Force reload by appending a timestamp
-        script.src = oldSrc.split('?')[0] + '?t=' + Date.now();
-      } catch(e) {}
-    });
-  }
-
-  // ─── LEFT SIDEBAR TOGGLE ───
-  sidebarToggle.addEventListener('click', function() {
-    state.leftCollapsed = !state.leftCollapsed;
-    leftSidebar.classList.toggle('collapsed', state.leftCollapsed);
-    sidebarToggle.innerHTML = state.leftCollapsed ? '▶' : '◀';
-    window.dispatchEvent(new Event('resize'));
-  });
-
-  // ─── RIGHT PANEL TOGGLE ───
-  rightPanelToggle.addEventListener('click', function() {
-    state.rightCollapsed = !state.rightCollapsed;
-    rightPanel.classList.toggle('collapsed', state.rightCollapsed);
-    rightPanelToggle.innerHTML = state.rightCollapsed ? '◀' : '▶';
-    window.dispatchEvent(new Event('resize'));
-  });
-
-  // ─── BOTTOM TABS ───
-  bottomTabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      var tabName = this.getAttribute('data-tab');
-      toggleBottomPanel(tabName);
-    });
-  });
-
-  function toggleBottomPanel(tabName) {
-    // Hide all bottom content panels
-    document.querySelectorAll('#bottom-panel-inner > .tv-container').forEach(function(el) {
-      el.style.display = 'none';
-    });
-
-    if (state.bottomOpen && state.currentBottomTab === tabName) {
-      // Close panel
-      bottomPanel.classList.remove('open');
-      state.bottomOpen = false;
-      state.currentBottomTab = null;
-      bottomTabs.forEach(function(t) { t.classList.remove('active'); });
-    } else {
-      // Open panel with selected tab
-      var target = document.getElementById('bottom-' + tabName);
-      if (target) target.style.display = 'block';
-      bottomPanel.classList.add('open');
-      state.bottomOpen = true;
-      state.currentBottomTab = tabName;
-      bottomTabs.forEach(function(t) {
-        t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+          document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          activeInterval = interval;
+        });
       });
-      // Re-trigger widget sizing
-      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
-    }
-  }
 
-  bottomPanelClose.addEventListener('click', function() {
-    bottomPanel.classList.remove('open');
-    state.bottomOpen = false;
-    state.currentBottomTab = null;
-    bottomTabs.forEach(function(t) { t.classList.remove('active'); });
-  });
+      // Auto-hide timeframe bar after 3s idle
+      let tfVisible = true;
+      function showTfBar() {
+        tfBar.classList.remove('hidden');
+        tfVisible = true;
+        clearTimeout(tfHideTimeout);
+        tfHideTimeout = setTimeout(() => {
+          tfBar.classList.add('hidden');
+          tfVisible = false;
+        }, 3000);
+      }
+      showTfBar();
+      document.querySelector('#chart-wrapper').addEventListener('click', () => {
+        showTfBar();
+      });
+      tfBar.addEventListener('touchstart', () => {
+        clearTimeout(tfHideTimeout);
+      });
+      tfBar.addEventListener('touchend', () => {
+        tfHideTimeout = setTimeout(() => {
+          tfBar.classList.add('hidden');
+          tfVisible = false;
+        }, 3000);
+      });
 
-  // ─── RIGHT PANEL TABS ───
-  rightTabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      var tabId = this.getAttribute('data-tab');
-      rightTabs.forEach(function(t) { t.classList.remove('active'); });
-      this.classList.add('active');
-      rightContentPanels.forEach(function(p) { p.classList.remove('active'); });
-      var target = document.getElementById(tabId);
-      if (target) target.classList.add('active');
-      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
-    });
-  });
+      // ===== WATCHLIST DRAWER =====
+      function openWatchlist() {
+        backdrop.classList.add('open');
+        watchlistDrawer.classList.add('open');
+        loadWatchlistWidget();
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+      }
+      function closeWatchlist() {
+        backdrop.classList.remove('open');
+        watchlistDrawer.classList.remove('open');
+        document.body.style.overflow = '';
+      }
 
-  // ─── MOBILE SIDEBAR ───
-  mobileSidebarBtn.addEventListener('click', function() {
-    leftSidebar.classList.toggle('open-mobile');
-    mobileOverlay.classList.toggle('open');
-  });
+      $('menuBtn').addEventListener('click', openWatchlist);
+      $('closeWatchlist').addEventListener('click', closeWatchlist);
 
-  mobileOverlay.addEventListener('click', function() {
-    leftSidebar.classList.remove('open-mobile');
-    mobileOverlay.classList.remove('open');
-  });
+      // Also watchlist from bottom bar
+      document.querySelector('[data-panel="watchlist"]')?.addEventListener('click', openWatchlist);
 
-  // ─── KEYBOARD SHORTCUTS ───
-  document.addEventListener('keydown', function(e) {
-    // Alt+W = toggle watchlist sidebar
-    if (e.altKey && e.key === 'w') { e.preventDefault(); sidebarToggle.click(); }
-    // Alt+R = toggle right panel
-    if (e.altKey && e.key === 'r') { e.preventDefault(); rightPanelToggle.click(); }
-    // Alt+B = toggle bottom panel
-    if (e.altKey && e.key === 'b') {
-      e.preventDefault();
-      if (state.bottomOpen) { bottomPanelClose.click(); }
-      else { toggleBottomPanel('calendar'); }
-    }
-  });
+      let watchlistLoaded = false;
+      function loadWatchlistWidget() {
+        if (watchlistLoaded) return;
+        watchlistLoaded = true;
+        const container = $('watchlist-body');
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-watchlist.js';
+        script.innerHTML = JSON.stringify({
+          symbols: [
+            ['BITSTAMP:BTCUSD', 'BITSTAMP:ETHUSD', 'BITSTAMP:SOLUSD', 'BITSTAMP:ADAUSD', 'BITSTAMP:XRPUSD'],
+            ['OANDA:XAUUSD', 'OANDA:XAGUSD'],
+            ['FX:EURUSD', 'FX:GBPUSD', 'FX:USDJPY'],
+            ['FOREXCOM:SPX500', 'FOREXCOM:NSXUSD', 'FOREXCOM:DJI']
+          ],
+          colorTheme: 'dark',
+          isTransparent: false,
+          showSymbolLogo: true,
+          width: '100%',
+          height: '100%',
+          locale: 'en'
+        });
+        container.appendChild(script);
+      }
 
-  // ─── RESIZE HANDLER ───
-  var resizeTimer;
-  window.addEventListener('resize', function() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function() {
-      // TV chart auto-resizes, but we can fire a resize event
-      // for any iframes that need it
-    }, 200);
-  });
+      // ===== RIGHT BOTTOM SHEET =====
+      function openRightSheet() {
+        backdrop.classList.add('open');
+        rightSheet.classList.add('open');
+        loadSheetWidgets();
+        document.body.style.overflow = 'hidden';
+      }
+      function closeRightSheet() {
+        backdrop.classList.remove('open');
+        rightSheet.classList.remove('open');
+        document.body.style.overflow = '';
+      }
 
-  // ─── TRADINGVIEW CROSS-WIDGET COMMUNICATION ───
-  // TradingView widgets broadcast symbol changes via postMessage.
-  // We listen for these to keep things in sync.
-  window.addEventListener('message', function(event) {
-    try {
-      var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      // TradingView broadcasts 'symbolChange' or similar
-      if (data && data.symbol && data.name === 'symbolChanged') {
-        // Only update if it's not our own chart's event (avoid loops)
-        if (data.symbol !== state.currentSymbol) {
-          setSymbol(data.symbol);
+      // Tab switching
+      document.querySelectorAll('.sheet-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          const tabName = this.dataset.tab;
+          document.querySelectorAll('.sheet-content').forEach(c => c.classList.remove('active'));
+          const target = $('sheet-' + tabName);
+          if (target) target.classList.add('active');
+        });
+      });
+
+      // Open right sheet from tool buttons
+      document.querySelector('[data-panel="indicators"]')?.addEventListener('click', openRightSheet);
+
+      let sheetsLoaded = false;
+      function loadSheetWidgets() {
+        if (sheetsLoaded) return;
+        sheetsLoaded = true;
+        loadMarketOverview();
+        loadTechnicalAnalysis(CURRENT_SYMBOL);
+        loadCalendar();
+      }
+
+      function loadMarketOverview() {
+        const container = $('sheet-overview');
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+        script.innerHTML = JSON.stringify({
+          colorTheme: 'dark',
+          dateRange: '12M',
+          showChart: true,
+          isTransparent: false,
+          showSymbolLogo: true,
+          width: '100%',
+          height: '100%',
+          locale: 'en',
+          tabs: [
+            {title: 'Crypto', symbols: [{s:'BITSTAMP:BTCUSD'},{s:'BITSTAMP:ETHUSD'},{s:'BITSTAMP:SOLUSD'}]},
+            {title: 'Forex', symbols: [{s:'FX:EURUSD'},{s:'FX:GBPUSD'},{s:'FX:USDJPY'}]},
+            {title: 'Commodities', symbols: [{s:'OANDA:XAUUSD'},{s:'OANDA:XAGUSD'},{s:'NYMEX:CL1!'}]}
+          ]
+        });
+        container.appendChild(script);
+      }
+
+      function loadTechnicalAnalysis(symbol) {
+        const container = $('sheet-technicals');
+        container.innerHTML = '';
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+        script.innerHTML = JSON.stringify({
+          interval: '1h',
+          width: '100%',
+          height: '100%',
+          symbol: symbol || CURRENT_SYMBOL,
+          showIntervalTabs: true,
+          colorTheme: 'dark',
+          isTransparent: false,
+          locale: 'en'
+        });
+        container.appendChild(script);
+      }
+
+      function loadCalendar() {
+        const container = $('sheet-calendar');
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+        script.innerHTML = JSON.stringify({
+          colorTheme: 'dark',
+          isTransparent: false,
+          width: '100%',
+          height: '100%',
+          locale: 'en',
+          importanceFilter: '-1,0,1',
+          currencyFilter: 'USD,EUR,GBP,JPY,CHF,AUD,CAD'
+        });
+        container.appendChild(script);
+      }
+
+      // ===== BACKDROP CLOSE =====
+      backdrop.addEventListener('click', () => {
+        closeWatchlist();
+        closeRightSheet();
+      });
+
+      // ===== SYMBOL SEARCH =====
+      symbolName.addEventListener('click', () => {
+        symbolSearch.classList.add('open');
+        searchInput.value = '';
+        searchInput.focus();
+        showDefaultSymbols();
+      });
+
+      $('closeSearch').addEventListener('click', () => {
+        symbolSearch.classList.remove('open');
+      });
+
+      const SYMBOLS_LIST = [
+        {name: 'BTC/USD', desc: 'Bitcoin / US Dollar', symbol: 'BITSTAMP:BTCUSD'},
+        {name: 'ETH/USD', desc: 'Ethereum / US Dollar', symbol: 'BITSTAMP:ETHUSD'},
+        {name: 'SOL/USD', desc: 'Solana / US Dollar', symbol: 'BITSTAMP:SOLUSD'},
+        {name: 'ADA/USD', desc: 'Cardano / US Dollar', symbol: 'BITSTAMP:ADAUSD'},
+        {name: 'XRP/USD', desc: 'Ripple / US Dollar', symbol: 'BITSTAMP:XRPUSD'},
+        {name: 'XAU/USD', desc: 'Gold Spot / US Dollar', symbol: 'OANDA:XAUUSD'},
+        {name: 'XAG/USD', desc: 'Silver Spot / US Dollar', symbol: 'OANDA:XAGUSD'},
+        {name: 'EUR/USD', desc: 'Euro / US Dollar', symbol: 'FX:EURUSD'},
+        {name: 'GBP/USD', desc: 'British Pound / US Dollar', symbol: 'FX:GBPUSD'},
+        {name: 'USD/JPY', desc: 'US Dollar / Japanese Yen', symbol: 'FX:USDJPY'},
+        {name: 'S&P 500', desc: 'S&P 500 Index', symbol: 'FOREXCOM:SPX500'},
+        {name: 'NASDAQ 100', desc: 'NASDAQ 100 Index', symbol: 'FOREXCOM:NSXUSD'},
+        {name: 'Dow Jones', desc: 'Dow Jones Industrial Average', symbol: 'FOREXCOM:DJI'}
+      ];
+
+      function showDefaultSymbols() {
+        searchResults.innerHTML = '';
+        SYMBOLS_LIST.forEach(s => addSearchItem(s));
+      }
+
+      function addSearchItem(s) {
+        const div = document.createElement('div');
+        div.className = 'search-item';
+        div.innerHTML = `
+          <div>
+            <div class="si-name">${s.name}</div>
+            <div class="si-desc">${s.desc}</div>
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          selectSymbol(s.symbol);
+        });
+        // Keep tap highlight
+        searchResults.appendChild(div);
+      }
+
+      function selectSymbol(symbol) {
+        symbolSearch.classList.remove('open');
+        if (tvWidget) {
+          tvWidget.setSymbol(symbol, activeInterval, () => {});
         }
+        syncSymbolName(symbol);
+        startPricePoller(symbol);
+        closeWatchlist();
+        closeRightSheet();
       }
-      // Watchlist click broadcasts a symbol
-      if (data && data.symbol && typeof data.symbol === 'string' && data.symbol.indexOf(':') > 0) {
-        if (data.symbol !== state.currentSymbol) {
-          setSymbol(data.symbol);
+
+      searchInput.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        if (!q) { showDefaultSymbols(); return; }
+        searchResults.innerHTML = '';
+        SYMBOLS_LIST.forEach(s => {
+          if (s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q) || s.symbol.toLowerCase().includes(q)) {
+            addSearchItem(s);
+          }
+        });
+        if (searchResults.children.length === 0) {
+          searchResults.innerHTML = '<div style="padding:20px;text-align:center;color:#787b86;font-size:14px;">No results found</div>';
         }
-      }
-    } catch(e) {}
-  }, true);
+      });
 
-  // Also override TradingView's symbol change via click on chart
-  widget.onChartReady(function() {
-    widget.chart().onSymbolChanged(function() {
-      // The chart symbol changed (user typed new symbol)
-      var sym = widget.symbol();
-      if (sym && sym !== state.currentSymbol) {
-        state.currentSymbol = sym;
-        reloadWidget('right-technical', 'technical-analysis');
-        reloadWidget('symbol-info-wrapper', 'symbol-info');
-      }
-    });
-  });
+      // ===== DRAWING TOOLS & ALERTS (open TradingView's native) =====
+      document.querySelector('[data-panel="draw"]')?.addEventListener('click', () => {
+        if (tvWidget) {
+          // Toggle left toolbar visibility
+          try {
+            tvWidget.chart().executeActionById('chartProperties');
+          } catch(e) {
+            // Fallback: try to toggle drawing toolbar
+            tvWidget.toggleSidebar();
+          }
+        }
+      });
 
-  // ─── ACTIVE WATCHLIST SYMBOL CLICK ───
-  // When user clicks a symbol in the watchlist, we need to detect it.
-  // TradingView's watchlist embed fires a window.postMessage on click.
-  // We already have the message listener above that catches 'symbolChanged'.
-  // Additionally, we can poll for changes:
-  var lastSymbol = state.currentSymbol;
-  setInterval(function() {
-    try {
-      var sym = widget.symbol();
-      if (sym && sym !== lastSymbol) {
-        lastSymbol = sym;
-        state.currentSymbol = sym;
-        reloadWidget('right-technical', 'technical-analysis');
-        reloadWidget('symbol-info-wrapper', 'symbol-info');
-      }
-    } catch(e) {}
-  }, 2000);
+      document.querySelector('[data-panel="alerts"]')?.addEventListener('click', () => {
+        if (tvWidget) {
+          try {
+            tvWidget.chart().executeActionById('openAlertDialog');
+          } catch(e) {
+            // Fallback notify
+            alert('Alerts: Right-click on the chart to create an alert.');
+          }
+        }
+      });
 
-  console.log('TradingView platform initialized. Active symbol:', state.currentSymbol);
-  console.log('Keyboard shortcuts: Alt+W (watchlist), Alt+R (right panel), Alt+B (bottom panel)');
+      // ===== TOUCH GESTURES (Swipe) =====
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchActive = false;
 
-})();
-</script>
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchActive = true;
+        }
+      }, { passive: true });
 
+      document.addEventListener('touchmove', function(e) {
+        if (!touchActive || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        // Only horizontal swipes with enough distance
+        if (Math.abs(dx) > 30 && Math.abs(dy) < 60) {
+          touchActive = false;
+          if (dx > 0 && touchStartX < 40) {
+            // Swipe right from left edge → open watchlist
+            if (!watchlistDrawer.classList.contains('open')) {
+              openWatchlist();
+            }
+          } else if (dx < 0 && touchStartX > window.innerWidth - 40) {
+            // Swipe left from right edge → open right sheet
+            if (!rightSheet.classList.contains('open')) {
+              openRightSheet();
+            }
+          }
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => { touchActive = false; }, { passive: true });
+
+      // ===== DRAG TO CLOSE SHEET =====
+      let sheetStartY = 0;
+      let sheetDrag = false;
+      const dragHandle = $('dragHandle');
+
+      dragHandle.addEventListener('touchstart', function(e) {
+        sheetStartY = e.touches[0].clientY;
+        sheetDrag = true;
+        rightSheet.style.transition = 'none';
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        if (!sheetDrag || !rightSheet.classList.contains('open')) return;
+        const dy = e.touches[0].clientY - sheetStartY;
+        if (dy > 0) {
+          rightSheet.style.transform = `translateY(${dy}px)`;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', function() {
+        if (!sheetDrag) return;
+        sheetDrag = false;
+        rightSheet.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+        const transform = rightSheet.style.transform;
+        if (transform) {
+          const match = transform.match(/translateY\((\d+)px\)/);
+          if (match && parseInt(match[1]) > 80) {
+            closeRightSheet();
+          } else {
+            rightSheet.style.transform = '';
+          }
+        }
+      }, { passive: true });
+
+      // ===== WATCHLIST SYMBOL CLICK → UPDATE CHART (TV postMessage) =====
+      // We listen for clicks inside the watchlist iframe
+      // TradingView watchlist widget fires a postMessage when symbol is clicked
+      window.addEventListener('message', function(event) {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (data && data.name === 'symbolClick') {
+            const symbol = data.symbol || data.ticker;
+            if (symbol) {
+              selectSymbol(symbol);
+            }
+          }
+        } catch(e) {
+          // Ignore parse errors from other messages
+        }
+      });
+
+      // ===== RESIZE HANDLER =====
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (tvWidget) {
+            tvWidget.resize();
+          }
+        }, 200);
+      });
+
+      // ===== INIT =====
+      initChart(CURRENT_SYMBOL);
+
+      // Fallback: remove loading after 8s even if chart hasn't loaded
+      setTimeout(() => {
+        loading.classList.add('hidden');
+      }, 8000);
+
+      // ===== KEYBOARD: ESC to close overlays =====
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (symbolSearch.classList.contains('open')) { symbolSearch.classList.remove('open'); }
+          else if (watchlistDrawer.classList.contains('open')) { closeWatchlist(); }
+          else if (rightSheet.classList.contains('open')) { closeRightSheet(); }
+        }
+      });
+
+    })();
+  </script>
 </body>
 </html>
